@@ -214,7 +214,7 @@ class RuntimePathTests(unittest.TestCase):
             import yaml
         except ImportError:
             self.skipTest("PyYAML not installed")
-        doc = yaml.safe_load((pathlib.Path(card.__file__).resolve().parents[2] / ".github/workflows/domains.yml").read_text())
+        doc = yaml.safe_load((pathlib.Path(card.__file__).resolve().parents[2] / ".github/jim-workflows/domains.yml").read_text())
         job = doc["jobs"]["bills"]
         runs = [step.get("run", "") for step in job["steps"]]
         order = [next(i for i, r in enumerate(runs) if f"lifeos.run {stage}" in r) for stage in ("bills-paid", "bills-snapshot", "bills-card")]

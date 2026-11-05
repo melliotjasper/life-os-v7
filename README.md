@@ -1,9 +1,8 @@
-# LIFE OS v7
+# LIFE OS Jobs — Matt's fork
 
-A lean, composable operating system for one person's life. Built one shipped step at a time.
+Matt Jasper's automated job search (Jira MEJ-215), forked from Jim Markunas's LIFE OS V7. Every morning it finds jobs on employer job boards (and, once connected, LinkedIn/Jobright alert emails and LinkedIn's public job search), reads each full description, scores it against Matt's career profile, publishes the qualified ones to his Notion **Job Ledger**, and adds the LinkedIn connections who work at each company.
 
-- **Global source index:** [INDEX.md](INDEX.md): which file answers which question, its authority, owner and how to retrieve it.
-- **Development procedure:** [Canonical Development Policy](docs/life-os-development-policy.md) and [AGENTS.md](AGENTS.md). Product priority lives in Jira `LOS`; active development scope, sequencing and status live in Jira `LIFE`.
-- **Historical initial newsletter design:** [docs/PLAN.md](docs/PLAN.md) (not an active LIFE OS plan).
-- **One-time setup (secrets, variables, Notion, Hostinger):** [docs/SETUP.md](docs/SETUP.md)
-- V1 (`life-os-automation`) and V2 (`life-os-v2`) are **read-only reference**. Nothing is ported wholesale.
+- **How it works and one-time setup:** [docs/MATT_SETUP.md](docs/MATT_SETUP.md)
+- **For coding agents:** [CLAUDE.md](CLAUDE.md)
+- **Fit scoring model:** [docs/FIT_MODEL.md](docs/FIT_MODEL.md)
+- Jim's upstream material (governance, roadmaps, the other LIFE OS domains) is kept for reference: [INDEX.md](INDEX.md), [AGENTS.md](AGENTS.md), [docs/SETUP.md](docs/SETUP.md). None of it runs here.

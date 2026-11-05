@@ -23,6 +23,9 @@ from lifeos.sources.newsletters import config, finalize, ingest, sweep
 from tests.jobs.fit.test_fit import PROFILE as _PROFILE_OBJECT  # noqa: F401 - the same synthetic profile shape
 from tests.kit.jobsdb import JobsDB
 from tests.kit.ledger_pages import SOURCE
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (UK lanes, keep list); Matt's policy: test_matt_lanes
 
 PROFILE = {"years": 15, "scope": {"team_size": 10, "budget_usd": 20_000_000, "global": "direct", "enterprise": "direct", "multi_team": "direct", "executive": "adjacent", "people_leadership": "direct"},
            "capabilities": [{"id": "erp", "label": "ERP integrations", "class": "direct", "terms": ["netsuite", "erp"], "committed": True},

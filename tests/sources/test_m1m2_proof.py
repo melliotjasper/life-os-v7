@@ -13,6 +13,9 @@ from tests.interview.test_notion import ENV, page
 from tests.kit.tree import Tree
 from tests.sources.test_interview_journey import NotionLike
 from tests.sources.test_interview_journey_proof import qa_workspace
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (US remote-only, UK lanes, keep list); Matt's policy: test_matt_lanes
 
 NOW = datetime(2026, 10, 23, 12, 46, 17, 431743, tzinfo=ev.TZ)      # seconds and fractions, like a real clock (Notion keeps minutes)
 M1M2 = {**ENV, "INTERVIEW_JOURNEY_PROOF": "M1M2"}

@@ -305,25 +305,25 @@ class Dormant(unittest.TestCase):
     ROOT = Path(__file__).resolve().parents[3]
 
     def test_only_the_manual_workflow_runs_it_and_no_tick_scheduler_or_live_path_reaches_it(self):
-        mentions = [p.name for p in (self.ROOT / ".github/workflows").glob("*.y*ml") if "fit-edge-test" in p.read_text()]
+        mentions = [p.name for p in (self.ROOT / ".github/jim-workflows").glob("*.y*ml") if "fit-edge-test" in p.read_text()]
         self.assertEqual(mentions, ["fit-edge-test.yml"])
-        text = (self.ROOT / ".github/workflows/fit-edge-test.yml").read_text()
+        text = (self.ROOT / ".github/jim-workflows/fit-edge-test.yml").read_text()
         self.assertNotRegex(text, r"(?m)^\s*(schedule|workflow_run|push|pull_request\w*|repository_dispatch):")
         self.assertNotIn("--live", text)
         self.assertEqual(sorted(set(re.findall(r"secrets\.(\w+)", text))), ["LIFEOS_BWS_RUNTIME_TOKEN"])
         self.assertIn("inputs.confirm == 'SYNTHETIC'", text)
         importers = [str(p.relative_to(self.ROOT)) for p in (self.ROOT / "lifeos").rglob("*.py") if p.name != "edge.py" and ("fit.edge" in p.read_text() or "fit import edge" in p.read_text())]
         self.assertEqual(sorted(importers), ["lifeos/jobs/fit/backlog.py", "lifeos/jobs/fit/capacity_card.py", "lifeos/jobs/fit/cloud.py", "lifeos/run.py", "lifeos/sources/oracle_card.py"])   # the stage table, the Oracle Cloud card (Oct 24: its Codex lines are the AI Capacity `limits` reading; read-only, no model run), the D214 shadow (off unless V7_CLOUD_FIT is set), and the D228 card and the backlog batch's count report (only the no-model limits request)
-        workflows = [p.name for p in (self.ROOT / ".github/workflows").glob("*.y*ml") if "V7_CLOUD_FIT" in p.read_text()]
+        workflows = [p.name for p in (self.ROOT / ".github/jim-workflows").glob("*.y*ml") if "V7_CLOUD_FIT" in p.read_text()]
         self.assertEqual(workflows, ["hourly.yml"])                                                        # D214: only the tick reads the switch, from the repository variable
-        hourly = (self.ROOT / ".github/workflows/hourly.yml").read_text()
+        hourly = (self.ROOT / ".github/jim-workflows/hourly.yml").read_text()
         self.assertEqual(re.findall(r"V7_CLOUD_FIT: (\S.*?\}\})", hourly), ["${{ vars.V7_CLOUD_FIT || 'off' }}"])     # off unless Jim sets the variable (G6); never a dispatch input or a literal
         self.assertEqual(len(re.findall(r"vars\.V7_CLOUD_FIT == '(shadow|canary)'", hourly)), 0)         # LIFE-85: the tailnet join no longer depends on the Cloud Fit mode (the store fallback needs it every run);
         self.assertIn("LIFE-85: the store's Oracle fallback needs the tailnet on every run", hourly)          # a model call still needs V7_CLOUD_FIT or a Jim-set batch, checked by the stage itself
         # LIFE-41 (TL 10517/10524): the brief reference is masked. A repository variable is printed unmasked in the step's env header of a public repo's
         # log, so it may only ever arrive as a secret, and only to the tick step.
         self.assertEqual(re.findall(r"V7_CLOUD_FIT_PROFILE_REF: (\S.*?\}\})", hourly), ["${{ secrets.V7_CLOUD_FIT_PROFILE_REF }}"] * 2)   # the tick and the D219 manual backlog step, both the masked secret
-        for path in (self.ROOT / ".github/workflows").glob("*.y*ml"):
+        for path in (self.ROOT / ".github/jim-workflows").glob("*.y*ml"):
             self.assertNotIn("vars.V7_CLOUD_FIT_PROFILE_REF", path.read_text(), path.name)
 
 

@@ -25,7 +25,7 @@ def _matcher(rule):
 
 def check(title, company, text, profile=None):
     """-> (hard, soft): hard is {"id","reason","where"} or None; soft is a list of rule ids seen once, deep in the text."""
-    rules = [*lexicon.DEFAULT_EXCLUSIONS, *(profile.exclusions if profile else [])]
+    rules = [r for r in (*lexicon.DEFAULT_EXCLUSIONS, *(profile.exclusions if profile else [])) if not r.get("flag")]
     raw_text = text or ""
     soft = []
     for rule in rules:
@@ -46,6 +46,20 @@ def check(title, company, text, profile=None):
             return {"id": rule["id"], "reason": rule.get("reason") or rule["id"], "where": "text"}, soft
         soft.append(rule["id"])
     return None, soft
+
+
+def flags(title, company, profile=None):
+    """Matt (MEJ-215): a profile rule with `"flag": true` never excludes; when it matches the title or the company (its `where`, default company) its
+    reason is returned so the Fit line can show it ("Culture flag: ..."). The job is still scored and decided normally."""
+    found = []
+    for rule in (profile.exclusions if profile else []):
+        if not rule.get("flag"):
+            continue
+        positions = _matcher(rule)
+        where = rule.get("where") or "company"
+        if (where in ("title", "any") and positions(title or "", norm(title))) or (where in ("company", "any") and positions(company or "", norm(company))):
+            found.append(rule.get("reason") or rule["id"])
+    return found
 
 
 def _early(rule, raw_text):

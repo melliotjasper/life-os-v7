@@ -8,6 +8,9 @@ import unittest
 from lifeos.jobs.fit import judge
 from lifeos.jobs.fit.score import evaluate
 from tests.jobs.fit.test_fit import GOOD, PROFILE
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (UK lanes, keep list); Matt's policy: test_matt_lanes
 
 TODAY = date(2026, 10, 1)
 PAD = " Our teams value clear writing, steady delivery and honest status updates." * 6
@@ -78,7 +81,7 @@ Requirements
 • Experience with ERP or CMS integrations
 • Strong cross-functional leadership
 """ + PAD)
-JOBS["H excluded domain"] = ("Clinical Program Manager", "Wingtip Health", GOOD)
+JOBS["H excluded domain"] = ("Clinical Program Manager", "Wingtip Hospital", GOOD)
 JOBS["I program manager, unrelated domain"] = ("Program Manager, Events", "Humongous Events", """About the role
 Plan and run our annual conference series.
 

@@ -28,8 +28,9 @@ def reason(job, today=None, lane="US Remote", first_party=False):
     if policy.market == "US":
         if NON_US.search(where) and not US.search(where):
             return "non_us"
-        if policy.work_mode == "remote_only" and lanes.detect_work_mode(where, title) in ("onsite", "hybrid"):
-            return "not_remote"
+        if policy.work_mode in ("remote_only", "remote_or_metro") and lanes.detect_work_mode(where, title) in ("onsite", "hybrid"):
+            if not (policy.work_mode == "remote_or_metro" and policy.metro and re.search(policy.metro, where or "", re.I)):
+                return "not_remote"
     elif lanes.geography_status(where) == lanes.NEGATIVE:
         return "non_target_geography"                   # Scale-Up: any work mode, but a named non-target place is out
     if policy.max_age_days and not first_party and job["posted"] and ((today or date.today()) - job["posted"]).days > policy.max_age_days:

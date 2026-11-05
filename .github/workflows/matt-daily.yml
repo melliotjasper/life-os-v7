@@ -1,0 +1,131 @@
+name: matt-daily
+# Matt's LIFE OS Jobs run (MEJ-215). Once a day, and by hand: find jobs, read them, score them against Matt's profile, publish the qualified ones to his
+# Notion Job Ledger, and match them against his LinkedIn connections. Everything runs here: the job store is a MariaDB service container whose data
+# is saved, gzipped, to the `state` branch at the end of every run and restored at the start of the next (the repository must be PRIVATE).
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   FIT_PROFILE_JSON                    required: Matt's fit profile (private; never committed)
+#   NOTION_API_TOKEN                    required to publish: the "LIFE OS Jobs" Notion integration's token
+#   NOTION_JOB_LEDGER_DATA_SOURCE_ID    required to publish: the Job Ledger data source id
+#   NETWORK_HANDOFF_PAGE_ID             optional: the "LinkedIn Connections" Notion page (Connections.csv attached) -> referral matching
+#   GMAIL_OAUTH_CLIENT_ID, GMAIL_OAUTH_CLIENT_SECRET, GMAIL_OAUTH_REFRESH_TOKEN   optional: LinkedIn / Jobright job-alert emails from Gmail
+# A missing optional secret skips its steps; nothing else changes.
+on:
+  schedule:
+    - cron: "13 14 * * *"              # 14:13 UTC daily = 6:13 AM Pacific in winter (PST), 7:13 AM in summer (PDT)
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "Write to the store and Notion (unticked = dry run: reads and counts only; the store is not saved)"
+        type: boolean
+        default: true
+permissions:
+  contents: write                       # push the store snapshot to the `state` branch
+concurrency:
+  group: matt-daily
+  cancel-in-progress: false
+jobs:
+  daily:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: lifeos
+          MARIADB_USER: lifeos
+          MARIADB_PASSWORD: lifeos
+          MARIADB_ROOT_PASSWORD: lifeos-root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      LIVE: ${{ github.event_name == 'schedule' || inputs.live }}
+      LIFEOS_STORE_DIRECT: 127.0.0.1:3306
+      LIFEOS_ACQ_DB_NAME: lifeos
+      LIFEOS_ACQ_DB_USER: lifeos
+      LIFEOS_ACQ_DB_PASSWORD: lifeos       # the throwaway service container's own password; it is never reachable outside this job
+      V7_FIT_GATE: "true"
+      BOARDS_BACKFILL: "on"
+      FIT_PROFILE_JSON: ${{ secrets.FIT_PROFILE_JSON }}
+      NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
+      NOTION_JOB_LEDGER_DATA_SOURCE_ID: ${{ secrets.NOTION_JOB_LEDGER_DATA_SOURCE_ID }}
+      NETWORK_HANDOFF_PAGE_ID: ${{ secrets.NETWORK_HANDOFF_PAGE_ID }}
+      GMAIL_OAUTH_CLIENT_ID: ${{ secrets.GMAIL_OAUTH_CLIENT_ID }}
+      GMAIL_OAUTH_CLIENT_SECRET: ${{ secrets.GMAIL_OAUTH_CLIENT_SECRET }}
+      GMAIL_OAUTH_REFRESH_TOKEN: ${{ secrets.GMAIL_OAUTH_REFRESH_TOKEN }}
+      HAS_NOTION: ${{ secrets.NOTION_API_TOKEN != '' && secrets.NOTION_JOB_LEDGER_DATA_SOURCE_ID != '' }}
+      HAS_NETWORK: ${{ secrets.NETWORK_HANDOFF_PAGE_ID != '' && secrets.NOTION_API_TOKEN != '' }}
+      HAS_GMAIL: ${{ secrets.GMAIL_OAUTH_REFRESH_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/python
+      - name: Check the profile secret
+        run: |
+          if [ -z "$FIT_PROFILE_JSON" ]; then echo "::error::FIT_PROFILE_JSON is not set (docs/MATT_SETUP.md step 3)"; exit 1; fi
+          python -c "import os; from lifeos.jobs.fit import profile; p = profile.load(os.environ); print('profile ok, hash', p.hash)"
+      - name: Restore the store from the state branch
+        run: |
+          sudo apt-get install -y -q mariadb-client >/dev/null
+          if git fetch --depth=1 origin state 2>/dev/null && git show FETCH_HEAD:store.sql.gz > store.sql.gz 2>/dev/null; then
+            gunzip -c store.sql.gz | mysql -h127.0.0.1 -ulifeos -plifeos lifeos
+            echo "restored $(du -h store.sql.gz | cut -f1) snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no snapshot yet: starting with an empty store" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          python -m lifeos.jobs.store
+      - name: Run the day's stages
+        run: |
+          flag=$([ "$LIVE" = "true" ] && echo --live)
+          failed=""
+          step() { echo "::group::$*"; if timeout 1500 "$@"; then echo "::endgroup::"; else echo "::endgroup::"; echo "::warning::step failed: $*"; failed="$failed|$*"; fi; }
+          if [ "$HAS_GMAIL" = "true" ]; then
+            step python -m lifeos.sources.newsletters.sweep $flag
+            step python -m lifeos.sources.newsletters.ingest $flag
+            step python -m lifeos.run resolve-linkedin --limit 150 $flag
+          fi
+          step python -m lifeos.run linkedin-search --limit 40 $flag
+          step python -m lifeos.run boards --limit 900 $flag
+          for pass in 1 2 3; do step python -m lifeos.run boards-backfill --limit 450 $flag; done
+          step python -m lifeos.run enrich --limit 600 $flag
+          step python -m lifeos.run fit $flag
+          if [ "$HAS_NOTION" = "true" ]; then
+            step python -m lifeos.run audit-ready $flag
+            step python -m lifeos.run publish --limit 150 $flag
+            step python -m lifeos.run audit $flag
+          else
+            echo "::notice::NOTION_API_TOKEN / NOTION_JOB_LEDGER_DATA_SOURCE_ID not set: nothing is published"
+          fi
+          step python -m lifeos.run expire-holds $flag
+          if [ "$HAS_NETWORK" = "true" ]; then
+            step python -m lifeos.run network-import $flag
+            step python -m lifeos.run network-match
+            [ "$HAS_NOTION" = "true" ] && step python -m lifeos.run network-surface --limit 60 $flag
+          fi
+          if [ "$HAS_GMAIL" = "true" ]; then step python -m lifeos.sources.newsletters.finalize $flag; fi
+          python -m lifeos.jobs.store | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "failed steps: ${failed:-none}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "FAILED_STEPS=${failed}" >> "$GITHUB_ENV"
+      - name: Save the store to the state branch
+        if: ${{ always() && env.LIVE == 'true' }}
+        run: |
+          mysqldump -h127.0.0.1 -ulifeos -plifeos --single-transaction --no-tablespaces lifeos | gzip -9 > /tmp/store.sql.gz
+          size=$(stat -c %s /tmp/store.sql.gz)
+          if [ "$size" -gt 95000000 ]; then echo "::error::store snapshot is ${size} bytes, over GitHub's file limit"; exit 1; fi
+          git config user.name "matt-daily"
+          git config user.email "matt-daily@users.noreply.github.com"
+          git checkout --orphan state-new
+          git rm -rq --cached . && git clean -fdq -e store.sql.gz
+          cp /tmp/store.sql.gz store.sql.gz
+          git add store.sql.gz
+          git commit -qm "store snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f origin state-new:state
+          echo "saved $(du -h store.sql.gz | cut -f1) snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Fail the run when a stage failed (after the store is saved)
+        if: ${{ env.FAILED_STEPS != '' }}
+        run: |
+          echo "::error::failed steps: $FAILED_STEPS"
+          exit 1

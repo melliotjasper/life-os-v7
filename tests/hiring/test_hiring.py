@@ -803,7 +803,7 @@ class RuntimePathTests(unittest.TestCase):
         from lifeos import run as entry
         self.assertEqual(entry.STAGES["hiring"].target, ("lifeos.sources.hiring", "run"))
         import yaml
-        doc = yaml.safe_load((ROOT / ".github/workflows/domains.yml").read_text())
+        doc = yaml.safe_load((ROOT / ".github/jim-workflows/domains.yml").read_text())
         needs = set(doc["jobs"]["hiring"]["needs"])
         self.assertEqual(needs, set(doc["jobs"]) - {"hiring", "outlook", "megibow", "recruiters", "dcc", "report", "granola"})   # imessage writes the Communications and Oracle Cloud callouts (LIFE-34), so Hiring follows it too            # after every Daily Report writer, mail included (the failure-push job and the Recruiters ingest write nothing on the page)
         self.assertTrue({"jira", "agenda", "bills", "amazon", "attention", "mail"} <= needs)
@@ -913,7 +913,7 @@ def subprocess_diff_hourly():
         base = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "-q", "d3585198370a4f55f3a48c03dc84e8288839c67a"], capture_output=True, text=True).stdout.strip()
         if not base:
             return ""
-        return subprocess.run(["git", "-C", str(ROOT), "diff", base, "--", ".github/workflows/hourly.yml"], capture_output=True, text=True).stdout
+        return subprocess.run(["git", "-C", str(ROOT), "diff", base, "--", ".github/jim-workflows/hourly.yml"], capture_output=True, text=True).stdout
     except OSError:
         return ""
 
@@ -1085,12 +1085,12 @@ class GuardrailTests(unittest.TestCase):
                 self.assertEqual([n for n in names if n.startswith("lifeos.") and n.split(".")[1] not in ("platform", "hiring")], [], path.name)
 
     def test_hourly_and_the_scheduler_are_untouched(self):
-        hourly = (ROOT / ".github/workflows/hourly.yml").read_text()
+        hourly = (ROOT / ".github/jim-workflows/hourly.yml").read_text()
         self.assertNotIn("lifeos.run hiring", hourly)
         self.assertNotIn("HIRING_CARD_BLOCK_ID", hourly)
         changed = [l for l in subprocess_diff_hourly().splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]   # context lines may name neighbouring keys
         self.assertNotIn("hiring", "\n".join(changed).lower())                      # later slices may change hourly.yml; the Hiring Pipeline never has
-        domains = (ROOT / ".github/workflows/domains.yml").read_text()
+        domains = (ROOT / ".github/jim-workflows/domains.yml").read_text()
         self.assertNotIn("schedule:", domains)
         self.assertNotIn("cron", domains)
 

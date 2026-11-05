@@ -163,8 +163,8 @@ def drive(client, environ, box, now, results, counts, report=None):
           and quality.url_problem(POSTING) is None)
     fit = evaluate(ROLE, found.get("company") or "", text, PROFILE, today)
     check("1d Fit on the normalized description is Go at or above the floor", fit.decision == "Go" and fit.score is not None and fit.score >= lanes.FIT_FLOOR)
-    clinical = text.replace("commerce platform", "clinical trial platform") + " Clinical trial operations experience. More clinical trial work."
-    check("1e the same page with a clinical scope is No-Go", evaluate(ROLE, COMPANY, clinical, PROFILE, today).decision == "No-Go")
+    federal = text.replace("commerce platform", "federal government platform") + " Federal government delivery experience. More federal government work."
+    check("1e the same page with a federal-government scope is No-Go", evaluate(ROLE, COMPANY, federal, PROFILE, today).decision == "No-Go")
     decision, lane, eligible = lanes.decide_all(LANE, lanes.facts_for(fit.score, ROLE, found.get("location") or PLACE, text, SALARY, found.get("posted"), now, market="US",
                                                                        first_party=True), today)
     check("1f the US Remote lane admits it", decision.status == lanes.ADMIT and lane == LANE)

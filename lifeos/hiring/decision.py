@@ -1,7 +1,7 @@
 """D194 Hiring Decision, the first action: a person confirms an employer rejection (Confirm Rejected).
 
 One bounded write to ONE exact Job Ledger row, aimed by its stable page id AND its company AND role: `Hiring Decision = Rejected` plus one appended line in `Hiring Decision History`.
-`Applied`, `Applied On`, `Saturn Decision`, Notes pages and interview children are never written (read before and after; any difference fails the read-back). Detected mail is evidence, never
+`Applied`, `Applied On`, `My Decision`, Notes pages and interview children are never written (read before and after; any difference fails the read-back). Detected mail is evidence, never
 authority: the request must say `confirmed`. Notion has no conditional write, so the row is read, re-read just before the write (a changed edit time, decision or history refuses it) and
 read back after it; the operation id makes a retry a no-op. Fixed codes only: no company, role, id or reason ever enters an error. The caller refreshes the Hiring Pipeline only after this returns."""
 import json
@@ -141,7 +141,7 @@ def snapshot(page):
     """What a read-back must find unchanged, and the decision and history as they stand."""
     props = page.get("properties") or {}
     kept = {"Applied": (props.get("Applied") or {}).get("checkbox"), "Applied On": (props.get("Applied On") or {}).get("date"),      # the whole date object: start, end and time zone
-            "Saturn Decision": ((props.get("Saturn Decision") or {}).get("select") or {}).get("name"), "Company": _text(props.get("Company"), "rich_text"), "Job": _text(props.get("Job"), "title"),
+            "My Decision": ((props.get("My Decision") or {}).get("select") or {}).get("name"), "Company": _text(props.get("Company"), "rich_text"), "Job": _text(props.get("Job"), "title"),
             "Stable Job Key": _text(props.get("Stable Job Key"), "rich_text"), DISMISSED: _text(props.get(DISMISSED), "rich_text")}
     return kept, ((props.get(DECISION) or {}).get("select") or {}).get("name"), _text(props.get(HISTORY), "rich_text")
 

@@ -409,7 +409,7 @@ class Contract(unittest.TestCase):
         self.assertFalse((ROOT / "lifeos/hiring/close_app.py").exists())                              # no wrapper is left in the hiring package
 
     def test_no_stage_workflow_or_schedule_reaches_the_application(self):
-        for path in list((ROOT / ".github/workflows").glob("*.yml")) + [ROOT / "lifeos/run.py"]:
+        for path in list((ROOT / ".github/jim-workflows").glob("*.yml")) + [ROOT / "lifeos/run.py"]:
             text = path.read_text()
             for name in ("close_app", "close_screen"):
                 self.assertNotIn(name, text, path.name)
@@ -440,7 +440,7 @@ class Refresh(unittest.TestCase):
         self.assertEqual((status, h.after), (200, []))
 
     def test_the_refresh_run_queues_with_the_after_tick_writers_and_runs_only_the_hiring_job(self):
-        text = (ROOT / ".github/workflows/domains.yml").read_text()
+        text = (ROOT / ".github/jim-workflows/domains.yml").read_text()
         self.assertIn('options: ["none", "hiring", "recruiters"]', text)
         self.assertIn("group: ${{ (github.event_name == 'workflow_dispatch' && (inputs.refresh == 'hiring' || inputs.refresh == 'recruiters')) && 'life-os-v7-domains' ||", text)
         self.assertEqual(text.count("inputs.refresh == 'hiring'"), 2)                             # the group and the hiring job's `if`, nothing else

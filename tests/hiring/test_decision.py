@@ -52,7 +52,7 @@ class Source:
     def make(page_id, company, role, decision=None, history=""):
         props = {"Company": {"rich_text": rich(company)}, "Job": {"title": rich(role)}, "Applied": {"checkbox": True}, "Applied On": {"date": {"start": "2026-10-02", "end": None, "time_zone": None}},
                  "Stable Job Key": {"rich_text": rich(f"key-{page_id[:6]}")},
-                 "Saturn Decision": {"select": {"name": "Submitted"}}, "Hiring Decision": {"select": {"name": decision} if decision else None},
+                 "My Decision": {"select": {"name": "Submitted"}}, "Hiring Decision": {"select": {"name": decision} if decision else None},
                  "Hiring Decision History": {"rich_text": rich(history) if history else []}, "Dismissed Outcome Ref": {"rich_text": []}}
         return {"id": page_id, "archived": False, "in_trash": False, "last_edited_time": "2026-10-05T00:00:00.000Z", "properties": props,
                 "parent": {"type": "data_source_id", "data_source_id": LEDGER, "database_id": "d4" * 16}}
@@ -168,7 +168,7 @@ class ConfirmRejectedTests(unittest.TestCase):
         self.assertEqual(entry, {"action": "CONFIRM_REJECTED", "at": NOW.isoformat(timespec="seconds"), "op": OP, "reason": "Employer rejection email confirmed", "outcome": "Rejected"})
         for page_id in (SIBLING, OTHER):                                                           # another opportunity at the same company, and another company: not touched
             self.assertEqual(chain.source.pages[page_id], before[page_id])
-        for name in ("Applied", "Applied On", "Saturn Decision", "Company", "Job"):               # the historical application stays exactly as it was
+        for name in ("Applied", "Applied On", "My Decision", "Company", "Job"):               # the historical application stays exactly as it was
             self.assertEqual(chain.source.pages[TARGET]["properties"][name], before[TARGET]["properties"][name], name)
 
     def test_the_active_notes_page_and_its_interview_rounds_stay_where_they_are_while_the_pursuit_is_closed(self):
@@ -511,7 +511,7 @@ class BoundaryTests(unittest.TestCase):
         self.assertNotIn("update_page_properties", (self.ROOT / "lifeos/sources/hiring.py").read_text())
 
     def test_the_action_is_not_reachable_from_any_stage_workflow_or_schedule(self):
-        for path in (self.ROOT / ".github/workflows").glob("*.yml"):
+        for path in (self.ROOT / ".github/jim-workflows").glob("*.yml"):
             self.assertNotIn("confirm_rejected", path.read_text(), path.name)
         from lifeos import run as entry
         self.assertFalse([name for name, stage in entry.STAGES.items() if "decision" in str(getattr(stage, "target", ""))])

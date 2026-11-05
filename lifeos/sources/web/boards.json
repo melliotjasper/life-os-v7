@@ -1,5 +1,5 @@
 {
-"about": "D202. seed: the Open Jobs board list (github.com/elliottdehn/open-jobs, data/slugs.json, CC0 1.0), Greenhouse, Ashby and Lever boards only; rebuild with python -m lifeos.sources.web.boards_seed. extras: boards added by hand (kind, slug, company). skip: kind:slug never read.",
+"about": "D202. seed: the Open Jobs board list (github.com/elliottdehn/open-jobs, data/slugs.json, CC0 1.0), Greenhouse, Ashby and Lever boards only; rebuild with python -m lifeos.sources.web.boards_seed. extras: boards added by hand (kind, slug, company). skip: kind:slug never read. Matt (MEJ-215): his target employers (boards verified live Nov 5 2026) are in extras, so every daily run reads them.",
 "seed_generated_at": "2026-09-09",
 "seed": {
 "greenhouse": [
@@ -10716,6 +10716,161 @@
 "kind": "ashby",
 "slug": "runpod",
 "company": "Runpod"
+},
+{
+"kind": "greenhouse",
+"slug": "babylist",
+"company": "Babylist"
+},
+{
+"kind": "greenhouse",
+"slug": "distrokid",
+"company": "DistroKid"
+},
+{
+"kind": "greenhouse",
+"slug": "everlane",
+"company": "Everlane"
+},
+{
+"kind": "greenhouse",
+"slug": "faire",
+"company": "Faire"
+},
+{
+"kind": "greenhouse",
+"slug": "glossier",
+"company": "Glossier"
+},
+{
+"kind": "greenhouse",
+"slug": "instacart",
+"company": "Instacart"
+},
+{
+"kind": "greenhouse",
+"slug": "kickstarter",
+"company": "Kickstarter"
+},
+{
+"kind": "greenhouse",
+"slug": "nextdoor",
+"company": "Nextdoor"
+},
+{
+"kind": "greenhouse",
+"slug": "offerup",
+"company": "OfferUp"
+},
+{
+"kind": "greenhouse",
+"slug": "pinterest",
+"company": "Pinterest"
+},
+{
+"kind": "greenhouse",
+"slug": "poshmark",
+"company": "Poshmark"
+},
+{
+"kind": "greenhouse",
+"slug": "renttherunway",
+"company": "Rent the Runway"
+},
+{
+"kind": "greenhouse",
+"slug": "seatgeek",
+"company": "SeatGeek"
+},
+{
+"kind": "greenhouse",
+"slug": "splice",
+"company": "Splice"
+},
+{
+"kind": "greenhouse",
+"slug": "squarespace",
+"company": "Squarespace"
+},
+{
+"kind": "greenhouse",
+"slug": "stitchfix",
+"company": "Stitch Fix"
+},
+{
+"kind": "greenhouse",
+"slug": "stockx",
+"company": "StockX"
+},
+{
+"kind": "greenhouse",
+"slug": "yotpo",
+"company": "Yotpo"
+},
+{
+"kind": "greenhouse",
+"slug": "attentive",
+"company": "Attentive"
+},
+{
+"kind": "greenhouse",
+"slug": "figma",
+"company": "Figma"
+},
+{
+"kind": "greenhouse",
+"slug": "airtable",
+"company": "Airtable"
+},
+{
+"kind": "greenhouse",
+"slug": "klaviyo",
+"company": "Klaviyo"
+},
+{
+"kind": "lever",
+"slug": "hannaandersson",
+"company": "Hanna Andersson"
+},
+{
+"kind": "lever",
+"slug": "rover",
+"company": "Rover"
+},
+{
+"kind": "lever",
+"slug": "spotify",
+"company": "Spotify"
+},
+{
+"kind": "ashby",
+"slug": "gorgias",
+"company": "Gorgias"
+},
+{
+"kind": "ashby",
+"slug": "notion",
+"company": "Notion"
+},
+{
+"kind": "ashby",
+"slug": "patreon",
+"company": "Patreon"
+},
+{
+"kind": "ashby",
+"slug": "recharge",
+"company": "Recharge"
+},
+{
+"kind": "ashby",
+"slug": "substack",
+"company": "Substack"
+},
+{
+"kind": "ashby",
+"slug": "thumbtack",
+"company": "Thumbtack"
 }
 ],
 "skip": []

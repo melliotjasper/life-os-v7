@@ -109,7 +109,7 @@ class TheGatewayFollowsTheSettings(unittest.TestCase):
 class WorkflowsPassTheSwitchAndTheSettings(unittest.TestCase):
     def test_every_workflow_that_can_push_receives_the_mute_the_switch_and_the_settings(self):
         import pathlib
-        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows"
         senders = [p for p in sorted(root.glob("*.yml")) if "platform.alerts push" in p.read_text() or "platform.gate" in p.read_text() or "NTFY_TOPIC" in p.read_text()]
         self.assertGreaterEqual(len(senders), 4)
         for path in senders:

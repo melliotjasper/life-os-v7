@@ -104,7 +104,7 @@ def run(limit, live, environ=os.environ, client=None):
         if target != ledger.OK:
             counts["ledger_pages_pending"] = len(pages)                  # unreachable today (no published job is asked without the target check); fail closed anyway
         else:
-            counts["fit_sync"] = fit_sync.run(client, live, gate)         # the unchanged sync: machine-owned Fit fields only, never Applied / Applied On / Saturn Decision
+            counts["fit_sync"] = fit_sync.run(client, live, gate)         # the unchanged sync: machine-owned Fit fields only, never Applied / Applied On / My Decision
             with store.connect() as connection, connection.cursor() as cursor:
                 cursor.execute("SELECT COUNT(*) FROM v7_jobs j JOIN v7_job_fit f ON f.job_id = j.id WHERE j.id IN %s"
                                " AND (j.fit_synced_at IS NULL OR j.fit_synced_at < f.scored_at)", (tuple(pages),))

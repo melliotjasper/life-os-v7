@@ -10,6 +10,9 @@ from lifeos.jobs import lanes
 from lifeos.platform import limits
 from lifeos.sources.web import boards, boards_seed, lister, registry, run
 from tests.sources.web.test_web import MemRepo
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (14 days, US remote-only, UK lanes); Matt's policy: test_matt_lanes
 
 NOW = datetime(2026, 10, 17, 12, 0)
 
@@ -375,7 +378,7 @@ class Preview(unittest.TestCase):
     def test_every_lane_reason_has_a_fixed_public_code(self):
         from lifeos.jobs import lanes
         cases = {f"Fit 55 below {lanes.REVIEW_FLOOR}": "fit_below_review_floor", f"Fit 70 below {lanes.FIT_FLOOR}": "fit_below_admit_floor",
-                 f"Fit 70.5 below {lanes.FIT_FLOOR} (on Jim's keep list)": "fit_below_admit_floor_keep_list",
+                 f"Fit 70.5 below {lanes.FIT_FLOOR} (on the keep list)": "fit_below_admit_floor_keep_list",
                  f"Fit 65 below {lanes.NEAR_MISS_FLOOR} and market unresolved": "fit_below_near_miss_with_open_question",
                  "not remote: hybrid required": "not_remote_hybrid_required", "not remote: onsite required": "not_remote_onsite_required",
                  "remote assumed": "remote_assumed", "Fit unscorable": "fit_unscorable", "vacancy closed": "vacancy_closed",

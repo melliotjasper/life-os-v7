@@ -113,7 +113,7 @@ class LedgerRead(unittest.TestCase):
 
 class WorkflowStep(unittest.TestCase):
     def test_only_the_two_acceptance_steps_get_the_ledger_id_and_the_negative_case_never_runs_live(self):
-        text = (Path(__file__).resolve().parents[2] / ".github/workflows/hourly.yml").read_text()
+        text = (Path(__file__).resolve().parents[2] / ".github/jim-workflows/hourly.yml").read_text()
         job = text[text.index("\n  interview:\n"):text.index("\n  report:\n")]
         self.assertIn('      NOTION_JOB_LEDGER_DATA_SOURCE_ID: ""', job)                       # blank for the whole job
         self.assertEqual(job.count("NOTION_JOB_LEDGER_DATA_SOURCE_ID: ${{ secrets.NOTION_JOB_LEDGER_DATA_SOURCE_ID }}"), 2)

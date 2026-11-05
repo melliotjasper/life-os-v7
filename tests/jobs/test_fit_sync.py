@@ -42,7 +42,7 @@ def conn(rows):
 class FitSync(unittest.TestCase):
     def test_properties_never_touch_human_state_or_title(self):
         props = fit_sync.properties(81, "line", "REVIEW", "why", "remote", "Scale-Up", "Scale-Up,Skilled Worker", True)
-        for human in ("Applied", "Applied On", "Saturn Decision", "Job", "Apply URL"):
+        for human in ("Applied", "Applied On", "My Decision", "Job", "Apply URL"):
             self.assertNotIn(human, props)
         self.assertEqual((props["LIFE OS Fit"]["number"], props["Visible Lane"]["select"]["name"], props["Admission Status"]["select"]["name"]),
                          (81, "Scale-up", "Passed / Review"))

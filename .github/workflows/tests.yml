@@ -1,0 +1,38 @@
+name: tests
+# Secret-free check on every pull request and push to main: the unit tests in two parallel shards (tests/shard.py). No secrets, no database, no network beyond installing the pinned requirements.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true                  # a newer push to the same PR (or to main) replaces its older check; it shares no group with any tick or manual run
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/python
+      - name: Test-only dependency (PyYAML, for the workflow contract tests)
+        run: pip install pyyaml
+      - name: Unit tests (two parallel shards; warn at 45 s, fail at 75 s)
+        run: |
+          start=$(date +%s)
+          python -m tests.shard 1 2 > shard-1.log 2>&1 &
+          first=$!
+          python -m tests.shard 2 2 > shard-2.log 2>&1 &
+          second=$!
+          status=0
+          wait "$first" || status=$?
+          wait "$second" || status=$?
+          cat shard-1.log shard-2.log
+          elapsed=$(( $(date +%s) - start ))
+          echo "unit tests: exit ${status}, ${elapsed} s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          if [ "$elapsed" -ge 75 ]; then echo "::error::The unit-test suite took ${elapsed} s; the limit is 75 s"; exit 1; fi
+          if [ "$elapsed" -ge 45 ]; then echo "::warning::The unit-test suite took ${elapsed} s; the warning level is 45 s"; fi

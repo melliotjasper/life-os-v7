@@ -604,7 +604,7 @@ class BoundaryTests(unittest.TestCase):
         self.assertEqual(seen, [notion_client.VERSION, D.MOVE_VERSION, notion_client.VERSION])
 
     def test_the_move_is_not_reachable_from_any_workflow_stage_or_schedule(self):
-        for path in (T.ROOT / ".github/workflows").glob("*.yml"):
+        for path in (T.ROOT / ".github/jim-workflows").glob("*.yml"):
             text = path.read_text()
             for name in ("move_page", "confirm_rejected", "decision.decide"):
                 self.assertNotIn(name, text, path.name)

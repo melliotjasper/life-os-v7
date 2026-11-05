@@ -100,7 +100,7 @@ def _remote_tag(tag, header):
 
 def push_refusal(stderr):
     """Why GitHub refused the archive push, as a fixed code (git's message itself is never printed). Oct 20: the first real push needed the token's
-    Workflows permission, because the archived commits change .github/workflows files."""
+    Workflows permission, because the archived commits change .github/jim-workflows files."""
     text = (stderr or "").lower()
     if "workflow" in text:
         return "ARCHIVE_PUSH_NEEDS_WORKFLOWS_PERMISSION"

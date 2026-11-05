@@ -1,3 +1,5 @@
+> **Matt's fork (MEJ-215).** This repository is Matt Jasper's copy of LIFE OS V7, cut down to the Jobs system and retargeted to him. Start with [CLAUDE.md](CLAUDE.md) and [docs/MATT_SETUP.md](docs/MATT_SETUP.md). Everything below is **Jim's upstream governance**, kept as reference: its Jira LIFE/LOS process, Jim approvals, Buzz, Oracle, Hostinger and Bitwarden rules do not apply to this fork.
+
 # LIFE OS V7 — agent guide (read this, not the whole repo)
 
 V7 is the active LIFE OS implementation. V1 (`life-os-automation`) and V2 (`life-os-v2`) are read-only references: extract the smallest proven mechanic only.

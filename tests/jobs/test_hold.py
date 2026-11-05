@@ -7,6 +7,9 @@ from lifeos.jobs.resolve import stage as resolve_stage
 from lifeos.platform import alerts, limits
 from tests.kit.db import FakeConn
 from tests.kit.jobsdb import JobsDB
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (14 days, US remote-only, UK lanes); Matt's policy: test_matt_lanes
 
 NOW = datetime(2026, 10, 10, 12, 0)
 

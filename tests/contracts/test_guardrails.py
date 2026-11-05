@@ -38,7 +38,7 @@ class HumanStateIsNeverDestroyed(unittest.TestCase):
         flt = {f["property"]: f for f in retention.query_filter(__import__("datetime").datetime(2026, 10, 1), "US Remote")["and"] if "property" in f}
         self.assertEqual(flt["Applied"]["checkbox"], {"equals": False})
         self.assertEqual(flt["Applied On"]["date"], {"is_empty": True})
-        self.assertEqual(flt["Saturn Decision"]["select"], {"is_empty": True})
+        self.assertEqual(flt["My Decision"]["select"], {"is_empty": True})
 
     def test_unknown_is_protected(self):
         class Dead:
@@ -50,7 +50,7 @@ class HumanStateIsNeverDestroyed(unittest.TestCase):
 class AuditBehaviour(unittest.TestCase):
     """Behavioural proof: for every protected state, a failing published row is neither trashed nor demoted."""
 
-    FULL = {"Applied": {"checkbox": False}, "Applied On": {"date": None}, "Saturn Decision": {"select": None}}
+    FULL = {"Applied": {"checkbox": False}, "Applied On": {"date": None}, "My Decision": {"select": None}}
 
     def run_audit(self, page_props, target=None):
         from unittest import mock
@@ -86,7 +86,7 @@ class AuditBehaviour(unittest.TestCase):
     def test_every_protected_state_blocks_the_trash_and_the_demotion(self):
         cases = {"applied": {**self.FULL, "Applied": {"checkbox": True}},
                  "applied_on": {**self.FULL, "Applied On": {"date": {"start": "2026-09-15"}}},
-                 "saturn_decision": {**self.FULL, "Saturn Decision": {"select": {"name": "Pursue"}}},
+                 "saturn_decision": {**self.FULL, "My Decision": {"select": {"name": "Pursue"}}},
                  "unreadable": None,
                  "missing_property": {"Applied": {"checkbox": False}}}
         for why, props in cases.items():
@@ -175,9 +175,9 @@ class QuarantineAndSchedulerAndRegistries(unittest.TestCase):
         self.assertEqual((results, visible), ({}, None))
 
     def test_exactly_one_recurring_scheduler(self):
-        scheduled = [p.name for p in (ROOT / ".github/workflows").glob("*.y*ml") if re.search(r"^\s*schedule:", p.read_text(), re.M)]
+        scheduled = [p.name for p in (ROOT / ".github/jim-workflows").glob("*.y*ml") if re.search(r"^\s*schedule:", p.read_text(), re.M)]
         self.assertEqual(sorted(scheduled), ["hourly.yml", "safety.yml", "watchdog.yml"])    # the watchdog only raises an alert (D52); it never runs the pipeline. safety.yml is Jim's weekly read-only check (D142): it touches no pipeline state
-        safety = (ROOT / ".github/workflows/safety.yml").read_text()
+        safety = (ROOT / ".github/jim-workflows/safety.yml").read_text()
         self.assertEqual(len(re.findall(r"^\s*- cron:", safety, re.M)), 1)
         for word in ("--live", "NOTION_", "GMAIL_"):
             self.assertNotIn(word, safety)                                                          # the weekly check reads the database and prints counts; it writes nothing and holds no mailbox or Notion token
@@ -198,7 +198,7 @@ class QuarantineAndSchedulerAndRegistries(unittest.TestCase):
         self.assertTrue(all(loader < safety.index(f"lifeos.run {stage}") for stage in ("safety-sql-smoke", "safety-fit-golden", "safety-fit-capture")))   # loaded before any safety command
         self.assertEqual(re.search(r"options:\s*(\[[^\]]*\])", safety).group(1), '["all", "sql-smoke", "fit-golden", "fit-capture"]')            # dispatch choices unchanged
         self.assertNotRegex(safety, r"(?m)^\s*(workflow_run|repository_dispatch|push|pull_request\w*):")        # no new trigger or runtime path
-        watchdog = (ROOT / ".github/workflows/watchdog.yml").read_text()
+        watchdog = (ROOT / ".github/jim-workflows/watchdog.yml").read_text()
         self.assertNotIn("lifeos.run", watchdog)
         self.assertEqual(sorted(set(re.findall(r"secrets\.(\w+)", watchdog))), ["GITHUB_TOKEN", "LIFEOS_BWS_RUNTIME_TOKEN"])   # EDGE-1.3: the push topic now comes from Bitwarden; the GitHub copy of NTFY_TOPIC is no longer read here
         self.assertNotIn("secrets.NTFY_TOPIC", watchdog)
@@ -206,7 +206,7 @@ class QuarantineAndSchedulerAndRegistries(unittest.TestCase):
         self.assertEqual(re.findall(r"^\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\s*>\s*\w+)\s*$", watchdog, re.M), ["83c553e9-23a6-45aa-9006-b4db015f00ac > NTFY_TOPIC"] * 2)   # exactly one secret (in the load and its retry), nothing else fetched
         self.assertEqual(re.findall(r"^\s*- cron:\s*\"([^\"]+)\"", watchdog, re.M), ["17 * * * *", "47 * * * *"])           # schedules unchanged
         self.assertLess(watchdog.index("bitwarden/sm-action"), watchdog.index("lifeos.platform.gate --watch"))              # loaded before the first step that needs it
-        self.assertEqual(len(re.findall(r"^\s*- cron:", (ROOT / ".github/workflows/hourly.yml").read_text(), re.M)), 3)   # D30: three triggers, one gate
+        self.assertEqual(len(re.findall(r"^\s*- cron:", (ROOT / ".github/jim-workflows/hourly.yml").read_text(), re.M)), 3)   # D30: three triggers, one gate
 
     def test_machine_input_universes_are_frozen(self):
         """A change to a source registry must be deliberate: update these numbers in the same commit."""
@@ -228,7 +228,7 @@ if __name__ == "__main__":
 
 class ExcludedPagesAreCleared(unittest.TestCase):
     """With the Fit gate on, a published page whose lane decision is EXCLUDE is trashed (never when a human pursuit may exist) and never published again."""
-    FULL = {"Applied": {"checkbox": False}, "Applied On": {"date": None}, "Saturn Decision": {"select": None}}
+    FULL = {"Applied": {"checkbox": False}, "Applied On": {"date": None}, "My Decision": {"select": None}}
 
     def run_audit(self, page_props, gated=True):
         from unittest import mock
@@ -262,7 +262,7 @@ class ExcludedPagesAreCleared(unittest.TestCase):
         self.assertFalse(any("DELETE" in w for w in writes))                # the ledger hash and the description stay
 
     def test_applied_or_decided_pages_are_never_trashed(self):
-        for props in ({**self.FULL, "Applied": {"checkbox": True}}, {**self.FULL, "Saturn Decision": {"select": {"name": "Apply"}}}):
+        for props in ({**self.FULL, "Applied": {"checkbox": True}}, {**self.FULL, "My Decision": {"select": {"name": "Apply"}}}):
             counts, trashed, writes = self.run_audit(props)
             self.assertEqual((trashed, writes, counts.get("excluded_cleared", 0)), ([], [], 0))
 
@@ -275,7 +275,7 @@ class InterviewJobIsIsolated(unittest.TestCase):
     """The Interview job gets only its own token: every Jobs secret is blanked, it is dispatch-only, and its failure is a warning, not a failed run."""
 
     def block(self):
-        text = (ROOT / ".github/workflows/hourly.yml").read_text()
+        text = (ROOT / ".github/jim-workflows/hourly.yml").read_text()
         start = text.index("\n  interview:\n")
         return text[start:text.index("\n  report:\n")]
 

@@ -2,7 +2,7 @@
 
 A failing row goes back to NEW (final link cleared, reason audit_*) so it is resolved again with the stricter rules.
 A failing PUBLISHED row also has its Notion page trashed and its ledger hash removed, UNLESS a human pursuit may exist: lifeos.jobs.guard
-protects a page that is Applied, has an Applied On date or a Saturn Decision, matches an active hiring-pipeline opportunity, or cannot be read.
+protects a page that is Applied, has an Applied On date or a My Decision, matches an active hiring-pipeline opportunity, or cannot be read.
 A protected row is left exactly as it is (PUBLISHED, page untouched) and only counted. Logs: counts only.
 
 With V7_FIT_GATE=true the audit also clears out published pages whose lane decision is EXCLUDE (published before they were scored, or re-scored since): the page is

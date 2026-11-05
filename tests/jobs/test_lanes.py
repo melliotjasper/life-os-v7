@@ -4,9 +4,11 @@ import unittest
 
 from lifeos.jobs import lanes
 from lifeos.jobs.lanes import ADMIT, DISABLED, EXCLUDE, NEGATIVE, POLICIES, POSITIVE, REVIEW, UNRESOLVED, Facts, qualify
+from tests.kit import jim_lanes
 
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # these tests exercise Jim's lane mechanisms; Matt's policy: test_matt_lanes
 TODAY = date(2026, 10, 1)
-US, SCALE, SW = POLICIES["US Remote"], POLICIES["Scale-Up"], POLICIES["Skilled Worker"]
+US, SCALE, SW = jim_lanes.JIM["US Remote"], jim_lanes.JIM["Scale-Up"], jim_lanes.JIM["Skilled Worker"]
 
 
 def ago(days):
@@ -371,7 +373,7 @@ class ThinBoardAdmitTests(unittest.TestCase):
 
 
 class KeepListTests(unittest.TestCase):
-    """D115: a role on Jim's keep list is never excluded for Fit alone; it goes to Review."""
+    """D115: a role on the keep list is never excluded for Fit alone; it goes to Review."""
 
     def facts(self, fit, kept):
         return lanes.facts_for(fit, "Product Designer (Platform)", "London · office · United Kingdom", "x", None, None, date(2026, 10, 4),

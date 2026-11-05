@@ -7,6 +7,9 @@ from lifeos.jobs import audit, lanes
 from lifeos.platform.tinyfish import TinyFishError
 from lifeos.sources.web import registry, titlewatch as tw
 from tests.kit.db import FakeConn
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (US remote-only, UK lanes, keep list); Matt's policy: test_matt_lanes
 
 NOW = datetime(2026, 10, 4, 20, 0)
 CRYPTO = "https://www.revolut.com/careers/position/c7078b70-e10b-4f47-b983-bbe6d08d098a/"
@@ -179,7 +182,7 @@ class LaneTests(unittest.TestCase):
             self.assertEqual((decision.status, decision.reason), (lanes.REVIEW, lanes.TITLE_ONLY_REASON), fit)
         for fit in (71, 70, 68):                                                                  # below the 72 floor (D191): Review for the floor, still never a Go
             decision = self.decide(fit, title_only=True, kept=True)
-            self.assertEqual((decision.status, decision.reason), (lanes.REVIEW, f"Fit {fit} below 72 (on Jim's keep list)"), fit)
+            self.assertEqual((decision.status, decision.reason), (lanes.REVIEW, f"Fit {fit} below 72 (on the keep list)"), fit)
         self.assertEqual(self.decide(95).status, lanes.ADMIT)                                  # a read posting at the same score is a Go
 
     def test_a_low_score_or_an_unresolved_place_never_excludes_a_watched_title(self):

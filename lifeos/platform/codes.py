@@ -748,6 +748,7 @@ CODES = {
     "STALE_IDENTITY": _r("hiring", "blocked", False, "The page no longer matches the screen that was opened.", "Open the screen again."),
     "STALE_SOURCE": _r("hiring", "blocked", False, "The source changed since the screen was opened.", "Open the screen again."),
     "STATUS_INVALID": _r("amazon", "terminal", False, "An order status is not valid.", "Review the order."),
+    "STORE_DIRECT_INVALID": _r("store", "blocked", False, "LIFEOS_STORE_DIRECT is not host:port.", "Fix the workflow setting."),
     "STORE_DB_CONNECT_FAILED": _r("store", "retry", False, "The store database connection failed.", "None; retried. Persistent: check the store tunnel."),
     "STORE_INVALID": _r("hiring", "bug", False, "The stored data is not valid.", "Check the store."),
     "STORE_SSH_BANNER": _r("store", "retry", False, "The store SSH banner did not arrive.", "None; retried."),
@@ -816,7 +817,8 @@ CODES.update({    # --- Jira/Notion context refactor planner (lifeos/delivery/co
     'BATCH_TOO_LARGE': _r("delivery context refactor", 'blocked', False, 'The batch is over the approved or hard cap.', 'Split the batch.'),
 })
 
-NOT_CODES = frozenset((            # upper-case names that are configuration, not results: environment variables, secret names and setting keys
+NOT_CODES = frozenset((
+    "LIFEOS_STORE_DIRECT", "LIFEOS_ACQ_DB_USER", "LIFEOS_ACQ_DB_PASSWORD",            # upper-case names that are configuration, not results: environment variables, secret names and setting keys
     "JM_DASHBOARD_PAGE_ID", "JM_DASHBOARD_REDACT_TERMS",      # JFM-221: the Jim & Matt dashboard page and Jim's private redaction terms
     "BUZZ_MCP_PUBLIC_URL", "BUZZ_MCP_ORIGINS", "BUZZ_OAUTH_ISSUER", "BUZZ_OAUTH_JWKS_URL", "BUZZ_OAUTH_CLIENTS", "BUZZ_OAUTH_USERS", "BUZZ_OAUTH_AS_URL", "BUZZ_RECIPIENTS", "BUZZ_MENTION_SENDERS",      # LIFE-216 / BUZZ-16: remote Buzz MCP settings
     "LAYOUT_SHARD",                # Jim, Oct 27: which slice (i/n) of the Ledger pages a layout run moves
@@ -926,6 +928,10 @@ REASONS = {
     "not_in_london": _r("lanes", "terminal", False, "The role is not in London.", "None."),
     "not_remote_hybrid_required": _r("lanes", "terminal", False, "Not remote: hybrid is required.", "None."),
     "not_remote_onsite_required": _r("lanes", "terminal", False, "Not remote: onsite is required.", "None."),
+    "not_remote_hybrid_outside_metro": _r("lanes", "terminal", False, "Hybrid is required outside the Seattle area.", "None."),
+    "not_remote_onsite_outside_metro": _r("lanes", "terminal", False, "Onsite is required outside the Seattle area.", "None."),
+    "onsite_in_metro": _r("lanes", "state", False, "A fully onsite role in the Seattle area: Review.", "None."),
+    "metro_hybrid": _r("lanes", "state", False, "A hybrid role in the Seattle area.", "None."),
     "older_than_max_age": _r("lanes", "terminal", False, "The posting is older than the maximum age.", "None."),
     "posting_date_future": _r("lanes", "state", False, "The posting date is in the future.", "None."),
     "posting_date_unresolved": _r("lanes", "state", False, "The posting date is unresolved.", "None."),

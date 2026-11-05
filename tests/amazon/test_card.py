@@ -237,7 +237,7 @@ class OwnershipTests(unittest.TestCase):
             import yaml
         except ImportError:
             self.skipTest("PyYAML not installed")
-        doc = yaml.safe_load((pathlib.Path(card.__file__).resolve().parents[2] / ".github/workflows/domains.yml").read_text())
+        doc = yaml.safe_load((pathlib.Path(card.__file__).resolve().parents[2] / ".github/jim-workflows/domains.yml").read_text())
         job = doc["jobs"]["amazon"]
         runs = [s.get("run", "") for s in job["steps"]]
         order_ = [next(i for i, r in enumerate(runs) if f"lifeos.run {name}" in r) for name in ("amazon-orders", "amazon-card")]

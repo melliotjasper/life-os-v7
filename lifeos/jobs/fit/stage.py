@@ -128,7 +128,7 @@ def promote_cloud(cursor, job_id, judgment, model, profile, today, gate, counts,
     which publish writes to Why It Fits. Only the row the shadow has just stored as CANARY_PROMOTION_FAILED is touched, and the one UPDATE that writes the
     visible Fit is the one that marks it CANARY, so the marker and the visible score exist together or not at all. A published job the cloud excludes is promoted
     the same way (D224, replacing the D219 hold): its stored admission becomes EXCLUDE and the gated precision audit, which runs right after Fit
-    in the tick, trashes its page under lifeos.jobs.guard (Applied, Applied On, a Saturn Decision or an active pipeline opportunity keeps it) and the job becomes
+    in the tick, trashes its page under lifeos.jobs.guard (Applied, Applied On, a My Decision or an active pipeline opportunity keeps it) and the job becomes
     EXCLUDED_FIT, never published again. -> True when promoted, else False."""
     cursor.execute(CANARY_ROW, (job_id,))
     row = cursor.fetchone()

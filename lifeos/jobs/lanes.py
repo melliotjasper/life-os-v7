@@ -24,7 +24,8 @@ class LanePolicy:
     name: str
     market: str                          # "US" | "UK"
     currency: str                        # the symbol explicit pay is judged in
-    work_mode: str = "any"               # "remote_only" | "any"
+    work_mode: str = "any"               # "remote_only" | "remote_or_metro" | "any"
+    metro: str | None = None             # remote_or_metro: the commutable area (regex on the job's location) where hybrid or onsite is acceptable
     pay_floor: int | None = None         # annual, only when pay is explicit
     max_age_days: int | None = None      # new-admission freshness; None = no gate
     unknown_date_blocks: bool = True     # a missing posting date goes to REVIEW (False: it does not suppress)
@@ -37,16 +38,22 @@ class LanePolicy:
     bucket: str = "Curated"              # Curated | Target (sourcing priority only; never a different Fit floor)
 
 
+SEATTLE_METRO = (r"\b(?:seattle|bellevue|redmond|kirkland|bothell|renton|issaquah|woodinville|lynnwood|everett|tacoma|tukwila|kent|sammamish|"
+                 r"mercer island|shoreline|puget sound)\b")
+
+
 POLICIES = {
-    "US Remote": LanePolicy("US Remote", "US", "$", work_mode="remote_only", pay_floor=75_000, max_age_days=14, first_party_age=True),
+    # Matt (MEJ-215): US remote anywhere, or hybrid in the Seattle area (2-3 office days); a $150K base floor when pay is posted; postings up to 30 days old
+    # (an employer board lists only open roles, and the first runs must not drop the open backlog).
+    "US Remote": LanePolicy("US Remote", "US", "$", work_mode="remote_or_metro", metro=SEATTLE_METRO, pay_floor=150_000, max_age_days=30, first_party_age=True),
     # Scale-Up: the liberal lane. Any work mode, no pay floor, route + geography evidence required, 30-day age gate
     # (Jim, 2026-10-01; the earlier canon had no age gate). A missing posting date does not suppress it.
     "Scale-Up": LanePolicy("Scale-Up", "UK", "£", pay_floor=40_000, max_age_days=30, unknown_date_blocks=False, first_party_age=True, route="Scale-up",
-                           geography_required=True, london_only=True, bucket="Target"),
+                           geography_required=True, london_only=True, bucket="Target", enabled=False),     # Jim's UK lane: off for Matt
     # Skilled Worker (Phase 2, enabled by Jim 2026-10-01): sponsor-register evidence for the actual employer is the route; London positive, a named
     # non-target place negative, UK-remote / unresolved geography goes to Review; explicit pay under GBP 65,000 excludes; 14 days; Fit 72 like every lane.
     "Skilled Worker": LanePolicy("Skilled Worker", "UK", "£", pay_floor=65_000, max_age_days=14, route="Skilled Worker",
-                                 geography_required=True, market_required=True, bucket="Target"),
+                                 geography_required=True, market_required=True, bucket="Target", enabled=False),     # Jim's UK lane: off for Matt
     RECRUITER: LanePolicy(RECRUITER, "US", "$", unknown_date_blocks=False),          # no gate of its own (decide_all); present so freshness and hold lookups find a policy
 }
 
@@ -54,21 +61,11 @@ POLICIES = {
 # D115: roles Jim chose to see whatever the model scores. (company substring, title regex), both case-insensitive. A listed role that no hard exclusion rule
 # hits and that clears every other lane test is never excluded for Fit: a score under 72 is Review ("Fit N below 72 (on Jim's keep list)"), so it reaches the
 # board for Jim to decide. The score itself is stored untouched.
-KEEP_LIST = (
-    ("revolut", r"^product designer \(platform\)$"),
-    ("revolut", r"^partnerships manager \(lifestyle\)$"),
-    ("revolut", r"^operations manager \(revenue\)$"),
-    # Jim, Oct 20: four Revolut roles that must reach the board. Operations Manager (Revenue) is listed above; the title patterns tolerate the usual punctuation variants.
-    ("revolut", r"^product owner\s*[(\-\u2013,:]*\s*technical\b"),
-    ("revolut", r"^product owner\s*[(\-\u2013,:]*\s*(?:ux|user experience)\b"),
-    ("revolut", r"^credit manager\b.*\bproduct\b"),
-)
+KEEP_LIST = ()          # Matt: no hand-picked roles yet; add (company substring, title regex) pairs here
 
 # A keep-list role that a private TITLE rule would exclude (Credit Manager matches the financial-risk rule on "credit manager", but this one is a product role).
 # Jim chose it by name, so the rule does not exclude it; its Fit is scored as usual and it reaches the board as Review. Every other keep-list role still obeys the rules.
-KEEP_OVERRIDES_EXCLUSION = (
-    ("revolut", r"^credit manager\b.*\bproduct\b"),
-)
+KEEP_OVERRIDES_EXCLUSION = ()
 
 
 TITLE_WATCH_PREFIX = "web:titlewatch:"
@@ -122,6 +119,7 @@ class Facts:
     thin: bool = False                   # Jim, Oct 21 (Oct 25: a fitting one is admitted, see thin_admit): a Scale-Up sponsor's own board whose page text is too thin to judge: a score from it is never a Go; Jim decides from the link
     title_only: bool = False             # D123: found by a title search; the page text could not be read, so the Fit rests on the title alone
     first_party: bool = False            # D111: listed on the employer's own board, so it is open: its posting age is not judged
+    metro: bool = False                  # the job's place is inside the lane's commutable area (remote_or_metro)
     open_application: bool = False       # D213: an unsolicited / general application ("Initiativbewerbung", "Talent Pool"): not a vacancy
 
 
@@ -160,6 +158,11 @@ def _qualify(policy, facts, today):
     if policy.work_mode == "remote_only":
         if facts.work_mode in ("onsite", "hybrid"):                    # D204: only a requirement excludes; its words are the evidence
             return Decision(EXCLUDE, f"not remote: {facts.work_mode} required" + (f' ("{facts.work_evidence[:40]}")' if facts.work_evidence else ""))
+    if policy.work_mode == "remote_or_metro" and facts.work_mode in ("onsite", "hybrid"):
+        if not facts.metro:
+            return Decision(EXCLUDE, f"not remote: {facts.work_mode} required outside the Seattle area" + (f' ("{facts.work_evidence[:40]}")' if facts.work_evidence else ""))
+        if facts.work_mode == "onsite":
+            return Decision(REVIEW, "onsite in the Seattle area")              # Matt: hybrid 2-3 days is the target; a fully onsite Seattle role is his call
     if (policy.pay_floor and facts.pay_min is not None and facts.pay_currency == policy.currency
             and facts.pay_min < policy.pay_floor):
         return Decision(EXCLUDE, f"explicit pay below {policy.currency}{policy.pay_floor:,}")
@@ -189,8 +192,10 @@ def _qualify(policy, facts, today):
     if facts.fit is None:
         return Decision(REVIEW, "Fit unscorable")
     if facts.fit < FIT_FLOOR and not (facts.thin_admit and facts.fit >= REVIEW_FLOOR):          # Jim, Oct 25: a thin board-feed role is judged on its title (Fit 60+), not held to 72 on a few lines of text
-        return Decision(REVIEW, f"Fit {facts.fit} below {FIT_FLOOR}" + (" (on Jim's keep list)" if facts.kept else ""))
-    return Decision(ADMIT, "remote assumed" if policy.work_mode == "remote_only" and facts.work_mode == "unknown" else None)     # D204: kept apart from stated remote
+        return Decision(REVIEW, f"Fit {facts.fit} below {FIT_FLOOR}" + (" (on the keep list)" if facts.kept else ""))
+    if policy.work_mode == "remote_or_metro" and facts.work_mode == "hybrid":
+        return Decision(ADMIT, "Seattle-area hybrid")
+    return Decision(ADMIT, "remote assumed" if policy.work_mode in ("remote_only", "remote_or_metro") and facts.work_mode == "unknown" else None)     # D204: kept apart from stated remote
 
 
 def qualify_all(facts, today, policies=POLICIES, own=None):
@@ -294,7 +299,7 @@ def detect_work_mode(location, title="", text="", window=1500):
 
 LANE_ALIAS = {"Newsletter": "US Remote"}        # a newsletter is a source family; its jobs are judged by the US Remote policy
 ADMISSION_LABEL = {ADMIT: "Admitted", REVIEW: "Passed / Review", EXCLUDE: "Excluded"}   # the Ledger's Admission Status options
-POLICY_VERSION = "l17"                            # bump when a policy changes so stored decisions are re-evaluated (l17: LIFE-212 employer-board age limits, US Remote 14 days and Scale-Up 30; l16: a thin Scale-Up, Greenhouse, Lever or Ashby board role with a fitting title is admitted; l15: the Revolut keep-list additions and the Credit Manager (Product) exemption)
+POLICY_VERSION = "m2"                            # bump when a policy changes so stored decisions are re-evaluated (l17: LIFE-212 employer-board age limits, US Remote 14 days and Scale-Up 30; l16: a thin Scale-Up, Greenhouse, Lever or Ashby board role with a fitting title is admitted; l15: the Revolut keep-list additions and the Credit Manager (Product) exemption)
 
 
 def lane_for(row_lane):
@@ -411,7 +416,12 @@ def facts_for(fit, title, location, text, salary_text, posted, first_seen, marke
         market = "US"
     return Facts(fit=fit, market=market, work_mode=mode, work_evidence=evidence, pay_min=pay_min,
                  pay_currency=currency, posted=when, route=route_dict(route), geography=geography_status(location), located=bool((location or "").strip()), first_party=first_party, kept=kept, title_only=title_only, thin=thin, thin_admit=thin and thin_admit,
-                 open_application=open_application(title))
+                 open_application=open_application(title), metro=_in_metro(location))
+
+
+def _in_metro(location):
+    """True when the job's place names the commutable area of an enabled remote_or_metro lane."""
+    return any(p.enabled and p.metro and re.search(p.metro, location or "", re.I) for p in POLICIES.values())
 
 
 def decide_all(row_lane, facts, today, exclusion=None):
@@ -445,9 +455,12 @@ PUBLIC_REASONS = (                                       # (lane reason, the fix
     (rf"Fit {_N} below {NEAR_MISS_FLOOR} and .+", "fit_below_near_miss_with_open_question"),
     (rf"Fit {_N} below {REVIEW_FLOOR}", "fit_below_review_floor"),
     (rf"Fit {_N} below {FIT_FLOOR}", "fit_below_admit_floor"),
-    (rf"Fit {_N} below {FIT_FLOOR} \(on Jim's keep list\)", "fit_below_admit_floor_keep_list"),
+    (rf"Fit {_N} below {FIT_FLOOR} \(on the keep list\)", "fit_below_admit_floor_keep_list"),
     (r"not remote: hybrid required(?: \(.*\))?", "not_remote_hybrid_required"),
     (r"not remote: onsite required(?: \(.*\))?", "not_remote_onsite_required"),
+    (r"not remote: hybrid required outside the Seattle area(?: \(.*\))?", "not_remote_hybrid_outside_metro"),
+    (r"not remote: onsite required outside the Seattle area(?: \(.*\))?", "not_remote_onsite_outside_metro"),
+    (r"onsite in the Seattle area", "onsite_in_metro"), (r"Seattle-area hybrid", "metro_hybrid"),
     (r"remote assumed", "remote_assumed"), (r"Fit unscorable", "fit_unscorable"), (r"vacancy closed", "vacancy_closed"), (r"not a vacancy: open application", "not_a_vacancy"),
     (r"explicit pay below .+", "pay_below_floor"), (r"posting date unresolved", "posting_date_unresolved"),
     (r"posting date in the future", "posting_date_future"), (rf"older than {_N} days", "older_than_max_age"),

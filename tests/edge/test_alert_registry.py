@@ -131,7 +131,7 @@ class TheCodeUsesOnlyRegisteredAlerts(unittest.TestCase):
 
     def test_every_workflow_push_names_a_registered_key(self):
         found = []
-        for path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        for path in sorted((ROOT / ".github" / "jim-workflows").glob("*.yml")):
             for line in path.read_text().splitlines():
                 if "lifeos.platform.alerts push" in line:
                     match = re.search(r"--key (\w+)", line)

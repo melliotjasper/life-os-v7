@@ -477,7 +477,7 @@ class Contract(unittest.TestCase):
             text = (self.ROOT / name).read_text()
             for banned in ("TinyFish", "tinyfish", "sendMail", "/send", "move(", "hiring_pipeline.read", "Hiring Pipeline page"):
                 self.assertNotIn(banned, text, name)
-        text = (self.ROOT / ".github/workflows/hourly.yml").read_text()
+        text = (self.ROOT / ".github/jim-workflows/hourly.yml").read_text()
         step = text[text.index("id: network_surface"):]
         step = step[:step.index("      - id: review")]
         self.assertIn("continue-on-error: true", step)                                                       # a Network failure never fails the Jobs run ...
