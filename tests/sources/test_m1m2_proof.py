@@ -170,7 +170,10 @@ class Scoped(unittest.TestCase):
 
 class M1M2Proof(Scoped):
     def test_every_assertion_passes_on_native_sandbox_surfaces_and_nothing_outside_the_sandbox_is_written(self):
-        counts, client, sources, tree, real_pipeline = self.run_case()
+        from datetime import timezone
+        from lifeos.jobs import enrich
+        with patch.object(enrich, "_now", lambda: NOW.astimezone(timezone.utc).replace(tzinfo=None)):     # the posting is dated NOW; the age check must not read the real clock
+            counts, client, sources, tree, real_pipeline = self.run_case()
         self.assertEqual(counts["proof"], "m1m2")
         self.assertEqual(counts["failed"], 0, json.dumps(counts["assertions"], indent=1))
         self.assertEqual(counts["passed"], 33)
