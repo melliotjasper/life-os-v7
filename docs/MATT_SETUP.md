@@ -7,7 +7,7 @@ Jira: MEJ-215 (fork Jim's job-search system), MEJ-247 (career profile), MEJ-244 
 One GitHub Actions workflow, `.github/workflows/matt-daily.yml`, once a day (6:13 AM Pacific in winter, 7:13 AM in summer) and on demand:
 
 1. **Find jobs.**
-   - **Employer job boards:** about 10,700 public Greenhouse, Lever and Ashby boards. Your 30 target employers (`extras` in `lifeos/sources/web/boards.json`) are read every day. Boards never read before are read 1,350 a day until all have been read once (about 8 days); after that, a board is re-read daily if it lists a role that fits.
+   - **Employer job boards:** about 10,700 public Greenhouse, Lever and Ashby boards. Your 30 target employers (`extras` in `lifeos/sources/web/boards.json`) are read every day. The first run reads every board once (a few minutes); after that, a board is re-read daily if it lists a role that fits, and the rest on a slower refresh.
    - **LinkedIn's public job search:** your titles (`QUERIES` in `lifeos/sources/linkedin_search.py`), US, last 24 hours. Optional.
    - **Gmail alert emails:** LinkedIn and Jobright alerts, once Gmail is connected (step 6).
 2. **Screen cheaply.** Titles that are clearly another profession, non-US places, and hybrid/onsite roles outside the Seattle area are dropped before any reading.
@@ -88,3 +88,11 @@ Profile shape: `lifeos/jobs/fit/profile.py`. Scoring model: `docs/FIT_MODEL.md`.
 - Pay is judged only when the posting states it.
 - Indeed alerts are not parsed (Jim's system never read them). LinkedIn, Jobright and the employer boards are.
 - LinkedIn's public search may refuse GitHub's servers on some days. That step then fails alone; the rest of the run continues.
+- Publishing is about 13 seconds a page, so a run publishes at most 100 jobs; a bigger first backlog reaches the Ledger over the next few mornings.
+
+## When a run fails
+
+The run summary (Actions > the run > Summary) says what happened:
+- `notion-preflight: job_ledger=target_unreadable`: the Notion connection can't see the Job Ledger. Open the LIFE OS Jobs page in Notion, click ••• > Connections, and add LIFE OS Jobs. Jobs are still found and stored; they publish on the next run after this is fixed.
+- `linkedin_page=NOTION_HTTP_404`: the same fix, for the LinkedIn Connections page (it inherits access from LIFE OS Jobs).
+- `failed steps: ...`: the named stages failed; every other stage ran and the store was saved. Re-run the workflow, or ask Claude to read the run's log.
