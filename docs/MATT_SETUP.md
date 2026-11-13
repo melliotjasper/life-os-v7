@@ -60,14 +60,15 @@ The run writes only the machine columns. **Applied**, **Applied On** and **My De
    | `NOTION_JOB_LEDGER_DATA_SOURCE_ID` | `783ede0c-615c-466f-971a-d6936d5ac7c6` |
    | `NETWORK_HANDOFF_PAGE_ID` | `40f0fdd9acb68172838cc9de8c0fdbd9` |
 4. **Merge the pull request into `main`.** GitHub runs schedules only from the default branch.
-5. **First run:** Actions > matt-daily > Run workflow (Live ticked). The run summary shows the counts. Jobs appear in the Job Ledger.
-6. **Gmail alerts (optional).**
+5. **Enable Actions on the fork.** GitHub turns workflows off in a new fork. Open the repository's **Actions** tab and click **I understand my workflows, go ahead and enable them**. If a banner says scheduled workflows are disabled, open **matt-daily** and click **Enable workflow**.
+6. **First run:** Actions > matt-daily > Run workflow (Live ticked). The run summary shows the counts. Jobs appear in the Job Ledger.
+7. **Gmail alerts (optional).**
    - In Google Cloud Console: create a project, enable the Gmail API, and set up the OAuth consent screen (External, add yourself as a test user).
    - Create an OAuth client ID (type Desktop app).
    - Get a refresh token with the `https://www.googleapis.com/auth/gmail.modify` scope. For example, in the OAuth 2.0 Playground, use your own client ID and secret.
    - Add secrets `GMAIL_OAUTH_CLIENT_ID`, `GMAIL_OAUTH_CLIENT_SECRET` and `GMAIL_OAUTH_REFRESH_TOKEN`.
    - Set up LinkedIn job alerts for your titles, delivered by email. The run moves those emails out of the inbox into a "J Newsletters" label, then reads the jobs in them.
-7. **LinkedIn connections (MEJ-244):** LinkedIn > Settings > Data privacy > Get a copy of your data > Connections. When the email arrives, download Connections.csv and drop it onto the "LinkedIn Connections" Notion page. Only names, companies and titles are read; email addresses never are. To refresh, attach a newer export.
+8. **LinkedIn connections (MEJ-244):** LinkedIn > Settings > Data privacy > Get a copy of your data > Connections. When the email arrives, download Connections.csv and drop it onto the "LinkedIn Connections" Notion page. Only names, companies and titles are read; email addresses never are. To refresh, attach a newer export.
 
 ## Tuning
 
