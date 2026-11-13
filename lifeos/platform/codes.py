@@ -932,6 +932,7 @@ REASONS = {
     "not_remote_onsite_outside_metro": _r("lanes", "terminal", False, "Onsite is required outside the Seattle area.", "None."),
     "onsite_in_metro": _r("lanes", "state", False, "A fully onsite role in the Seattle area: Review.", "None."),
     "metro_hybrid": _r("lanes", "state", False, "A hybrid role in the Seattle area.", "None."),
+    "remote_not_stated_outside_metro": _r("lanes", "state", False, "Placed in a city outside the Seattle area and remote is not stated: Review.", "None."),
     "older_than_max_age": _r("lanes", "terminal", False, "The posting is older than the maximum age.", "None."),
     "posting_date_future": _r("lanes", "state", False, "The posting date is in the future.", "None."),
     "posting_date_unresolved": _r("lanes", "state", False, "The posting date is unresolved.", "None."),

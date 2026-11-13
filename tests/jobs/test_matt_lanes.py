@@ -59,6 +59,15 @@ class MattLane(unittest.TestCase):
         self.assertEqual(decide("Remote - US", posted=TODAY - timedelta(days=31))[0], "EXCLUDE")
         self.assertEqual(decide("Remote - US", posted=TODAY - timedelta(days=25))[0], "ADMIT")
 
+    def test_a_named_city_outside_seattle_with_no_remote_statement_is_review(self):
+        for place in ("New York, NY", "San Francisco, CA", "Menlo Park, California, United States"):
+            status, reason, _ = decide(place)
+            self.assertEqual((status, lanes.public_reason(reason)), ("REVIEW", "remote_not_stated_outside_metro"), place)
+        self.assertEqual(decide("New York, NY", "This is a fully remote role.")[0], "ADMIT")          # remote stated: admitted
+        self.assertEqual(decide("United States")[0], "ADMIT")                                         # no city named: remote presumed (D204)
+        self.assertEqual(decide("Seattle, WA")[0], "ADMIT")                                           # inside the Seattle area
+        self.assertEqual(decide("New York, NY", fit=65)[0], "EXCLUDE")                                # a weak Fit with an open question is still a miss (D100)
+
     def test_uk_jobs_are_never_admitted(self):
         self.assertEqual(decide("London, UK", first_party=False)[0], "EXCLUDE")
         self.assertEqual(decide("Remote - United Kingdom", first_party=False)[0], "EXCLUDE")

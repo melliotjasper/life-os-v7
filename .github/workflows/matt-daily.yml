@@ -107,7 +107,7 @@ jobs:
             grep -q '"backfill": "off"' /tmp/step.log && break
           done
           step python -m lifeos.run enrich --limit 600 $flag
-          step python -m lifeos.run fit $flag
+          step python -m lifeos.run fit --limit 6000 $flag          # every job read today (the first full board pass reads ~2,300; Fit is ~10 jobs a second)
           if [ "$NOTION_OK" = "true" ]; then
             step python -m lifeos.run audit-ready $flag
             step python -m lifeos.run publish --limit 100 $flag             # about 13 s a page with its read-back; the rest publish on the next runs
