@@ -1,10 +1,12 @@
 name: matt-daily
 # Matt's LIFE OS Jobs run (MEJ-215). Once a day, and by hand: find jobs, read them, score them against Matt's profile, publish the qualified ones to his
 # Notion Job Ledger, and match them against his LinkedIn connections. Everything runs here: the job store is a MariaDB service container whose data
-# is saved, gzipped, to the `state` branch at the end of every run and restored at the start of the next (the repository must be PRIVATE).
+# is saved, gzipped and ENCRYPTED (AES-256, key in the STATE_KEY secret), to the `state` branch at the end of every run and restored at the start of the
+# next. The repository is a public fork, so the snapshot is unreadable without the key; logs print counts only, never job or contact details.
 #
 # Secrets (Settings > Secrets and variables > Actions):
 #   FIT_PROFILE_JSON                    required: Matt's fit profile (private; never committed)
+#   STATE_KEY                           required: a long random passphrase that encrypts the store snapshot (keep a copy; losing it means starting over)
 #   NOTION_API_TOKEN                    required to publish: the "LIFE OS Jobs" Notion integration's token
 #   NOTION_JOB_LEDGER_DATA_SOURCE_ID    required to publish: the Job Ledger data source id
 #   NETWORK_HANDOFF_PAGE_ID             optional: the "LinkedIn Connections" Notion page (Connections.csv attached) -> referral matching
@@ -49,6 +51,7 @@ jobs:
       V7_FIT_GATE: "true"
       BOARDS_BACKFILL: "on"
       FIT_PROFILE_JSON: ${{ secrets.FIT_PROFILE_JSON }}
+      STATE_KEY: ${{ secrets.STATE_KEY }}
       NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
       NOTION_JOB_LEDGER_DATA_SOURCE_ID: ${{ secrets.NOTION_JOB_LEDGER_DATA_SOURCE_ID }}
       NETWORK_HANDOFF_PAGE_ID: ${{ secrets.NETWORK_HANDOFF_PAGE_ID }}
@@ -66,13 +69,14 @@ jobs:
       - name: Check the profile secret
         run: |
           if [ -z "$FIT_PROFILE_JSON" ]; then echo "::error::FIT_PROFILE_JSON is not set (docs/MATT_SETUP.md step 3)"; exit 1; fi
+          if [ ${#STATE_KEY} -lt 20 ]; then echo "::error::STATE_KEY is not set or shorter than 20 characters (docs/MATT_SETUP.md step 3)"; exit 1; fi
           python -c "import os; from lifeos.jobs.fit import profile; p = profile.load(os.environ); print('profile ok, hash', p.hash)"
       - name: Restore the store from the state branch
         run: |
           sudo apt-get install -y -q mariadb-client >/dev/null
-          if git fetch --depth=1 origin state 2>/dev/null && git show FETCH_HEAD:store.sql.gz > store.sql.gz 2>/dev/null; then
-            gunzip -c store.sql.gz | mysql -h127.0.0.1 -ulifeos -plifeos lifeos
-            echo "restored $(du -h store.sql.gz | cut -f1) snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
+          if git fetch --depth=1 origin state 2>/dev/null && git show FETCH_HEAD:store.sql.gz.enc > /tmp/store.sql.gz.enc 2>/dev/null; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STATE_KEY -in /tmp/store.sql.gz.enc | gunzip -c | mysql -h127.0.0.1 -ulifeos -plifeos lifeos
+            echo "restored $(du -h /tmp/store.sql.gz.enc | cut -f1) encrypted snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "no snapshot yet: starting with an empty store" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
@@ -112,18 +116,21 @@ jobs:
       - name: Save the store to the state branch
         if: ${{ always() && env.LIVE == 'true' }}
         run: |
-          mysqldump -h127.0.0.1 -ulifeos -plifeos --single-transaction --no-tablespaces lifeos | gzip -9 > /tmp/store.sql.gz
-          size=$(stat -c %s /tmp/store.sql.gz)
+          set -o pipefail
+          mysqldump -h127.0.0.1 -ulifeos -plifeos --single-transaction --no-tablespaces lifeos | gzip -9 \
+            | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:STATE_KEY -out /tmp/store.sql.gz.enc
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STATE_KEY -in /tmp/store.sql.gz.enc | gunzip -t     # read back before replacing the last good snapshot
+          size=$(stat -c %s /tmp/store.sql.gz.enc)
           if [ "$size" -gt 95000000 ]; then echo "::error::store snapshot is ${size} bytes, over GitHub's file limit"; exit 1; fi
           git config user.name "matt-daily"
           git config user.email "matt-daily@users.noreply.github.com"
           git checkout --orphan state-new
-          git rm -rq --cached . && git clean -fdq -e store.sql.gz
-          cp /tmp/store.sql.gz store.sql.gz
-          git add store.sql.gz
+          git rm -rq --cached . && git clean -fdq
+          cp /tmp/store.sql.gz.enc store.sql.gz.enc
+          git add store.sql.gz.enc
           git commit -qm "store snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -f origin state-new:state
-          echo "saved $(du -h store.sql.gz | cut -f1) snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "saved $(du -h store.sql.gz.enc | cut -f1) encrypted snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Fail the run when a stage failed (after the store is saved)
         if: ${{ env.FAILED_STEPS != '' }}
         run: |

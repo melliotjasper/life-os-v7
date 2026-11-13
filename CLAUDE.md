@@ -10,6 +10,6 @@ Start here:
 Rules for agents working here:
 - **Matt is the owner.** Show times in Pacific Time (Seattle). Jim's LIFE/LOS Jira process, Buzz, OpenClaw, Oracle, Hostinger and Bitwarden do not apply to this fork; `AGENTS.md` and `docs/life-os-development-policy.md` are Jim's upstream governance, kept as reference only.
 - Jim's other domains (bills, Amazon, mail, calendar, interview OS, recruiters, MegIBOW, Jira cards) are still in the code but are **not run**: their workflows are parked in `.github/jim-workflows/`, which GitHub never executes. Don't move a file back into `.github/workflows/` unless Matt asks.
-- **Never commit personal data**: the fit profile, LinkedIn connections, job-store dumps (they live on the `state` branch only), tokens. `private/` is git-ignored for local copies.
+- **Never commit personal data**: the fit profile, LinkedIn connections, job-store dumps (they live on the `state` branch only, encrypted with the STATE_KEY secret; this repo is a public fork), tokens. `private/` is git-ignored for local copies.
 - Run `python -m unittest discover -s tests -t .` before pushing. Tests that exercise Jim's lane rules use `tests/kit/jim_lanes.py`; Matt's own rules are in `tests/jobs/test_matt_lanes.py` and `tests/jobs/fit/test_matt_profile.py` (the latter runs only when the private profile is present).
 - Develop on a branch and open a pull request; don't push to `main` directly unless Matt says so.

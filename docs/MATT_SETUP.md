@@ -24,7 +24,15 @@ One GitHub Actions workflow, `.github/workflows/matt-daily.yml`, once a day (6:1
 8. **Publish** Admitted and Review jobs to the Notion **Job Ledger**, with the score, strengths and gaps ("Why It Fits"), and the full description on the page.
 9. **Referral paths:** once your LinkedIn export is on the "LinkedIn Connections" page, each admitted job's page gets a "Network Leads" block listing the people you know who currently or previously list that employer.
 
-The job store is a MariaDB database that lives only inside the run. It is saved, gzipped, to the repository's `state` branch at the end of each run and restored at the start of the next. That is why the repository must be **private**.
+The job store is a MariaDB database that lives only inside the run. At the end of each run it is saved to the repository's `state` branch, compressed and **encrypted** (AES-256) with your `STATE_KEY` secret, and restored at the start of the next run.
+
+**This repository is public.** It's a fork, and GitHub doesn't let a fork be made private. So:
+- The saved store is unreadable without `STATE_KEY`.
+- Your fit profile and all tokens live only in GitHub secrets.
+- The run logs (public) print counts only, never job titles, companies or names.
+- What anyone *can* see is the code and docs: your lane rules ($150K floor, remote or Seattle hybrid), your target-company list in `boards.json`, and the Notion page IDs below (useless without your Notion token).
+
+To keep even that private, create a new **private** repository (not a fork, e.g. `melliotjasper/life-os-jobs`), push this branch to it, and add the same secrets there. Private repos get 2,000 free Actions minutes a month; a daily run takes about 25-45 minutes.
 
 ## Notion (already created)
 
@@ -37,7 +45,7 @@ The run writes only the machine columns. **Applied**, **Applied On** and **My De
 
 ## One-time setup
 
-1. **Make the repository private:** GitHub > melliotjasper/life-os-v7 > Settings > General > Danger Zone > Change visibility > Private. The free plan includes 2,000 Actions minutes a month; a daily run takes about 25-45 minutes.
+1. **Make up a store passphrase.** Use a password manager to generate a random passphrase of 30+ characters, and keep a copy there. If it's lost, the next run can't read the saved store: delete the `state` branch and the system starts over with an empty store (your Notion pages are kept).
 2. **Create the Notion integration.**
    - Go to https://www.notion.so/profile/integrations and choose New integration: name "LIFE OS Jobs", workspace Stride, type Internal.
    - Capabilities: Read content, Update content, Insert content. Save, then copy the **Internal Integration Secret**.
@@ -47,6 +55,7 @@ The run writes only the machine columns. **Applied**, **Applied On** and **My De
    | Secret | Value |
    |---|---|
    | `FIT_PROFILE_JSON` | the whole JSON from the Notion page "Fit Profile (private)" under LIFE OS Jobs |
+   | `STATE_KEY` | the passphrase from step 1 |
    | `NOTION_API_TOKEN` | the integration secret from step 2 |
    | `NOTION_JOB_LEDGER_DATA_SOURCE_ID` | `783ede0c-615c-466f-971a-d6936d5ac7c6` |
    | `NETWORK_HANDOFF_PAGE_ID` | `40f0fdd9acb68172838cc9de8c0fdbd9` |
