@@ -23,6 +23,8 @@ class Fake:
             if not self.ledger_ok:
                 raise NotionError("NOTION_HTTP_404")
             return {"properties": self.props}
+        if path == "/users/me":
+            return {"object": "user", "type": "bot", "name": "LIFE OS Jobs", "bot": {"owner": {"type": "workspace"}, "workspace_name": "Stride"}}
         if path.startswith("/blocks/"):
             if not self.page_ok:
                 raise NotionError("NOTION_HTTP_404")
@@ -52,7 +54,8 @@ class Preflight(unittest.TestCase):
     def test_an_unconnected_ledger_fails_with_the_fix(self):
         code, text, env = run(Fake(ledger_ok=False, page_ok=False))
         self.assertEqual(code, 1)
-        self.assertIn("job_ledger=target_unreadable", text)
+        self.assertIn("job_ledger=target_unreadable (NOTION_HTTP_404)", text)
+        self.assertIn('token is bot "LIFE OS Jobs" in workspace "Stride" (owner: workspace)', text)
         self.assertIn("::error::", text)
         self.assertIn("Connections", text)
         self.assertIn("NETWORK_OK=false", env)

@@ -21,6 +21,10 @@ on:
         description: "Write to the store and Notion (unticked = dry run: reads and counts only; the store is not saved)"
         type: boolean
         default: true
+      notion_check:
+        description: "Notion check only: test the Notion connection (about 1 minute) and stop; nothing else runs"
+        type: boolean
+        default: false
 permissions:
   contents: write                       # push the store snapshot to the `state` branch
 concurrency:
@@ -71,7 +75,13 @@ jobs:
           if [ -z "$FIT_PROFILE_JSON" ]; then echo "::error::FIT_PROFILE_JSON is not set (docs/MATT_SETUP.md step 3)"; exit 1; fi
           if [ ${#STATE_KEY} -lt 20 ]; then echo "::error::STATE_KEY is not set or shorter than 20 characters (docs/MATT_SETUP.md step 3)"; exit 1; fi
           python -c "import os; from lifeos.jobs.fit import profile; p = profile.load(os.environ); print('profile ok, hash', p.hash)"
+      - name: Notion check only
+        if: ${{ inputs.notion_check }}
+        run: |
+          set -o pipefail
+          python -m lifeos.jobs.notion_preflight | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Restore the store from the state branch
+        if: ${{ !inputs.notion_check }}
         run: |
           sudo apt-get install -y -q mariadb-client >/dev/null
           if git fetch --depth=1 origin state 2>/dev/null && git show FETCH_HEAD:store.sql.gz.enc > /tmp/store.sql.gz.enc 2>/dev/null; then
@@ -82,6 +92,7 @@ jobs:
           fi
           python -m lifeos.jobs.store
       - name: Run the day's stages
+        if: ${{ !inputs.notion_check }}
         run: |
           flag=$([ "$LIVE" = "true" ] && echo --live)
           failed=""
@@ -134,7 +145,7 @@ jobs:
           echo "failed steps: ${failed:-none}" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "FAILED_STEPS=${failed}" >> "$GITHUB_ENV"
       - name: Save the store to the state branch
-        if: ${{ always() && env.LIVE == 'true' }}
+        if: ${{ always() && env.LIVE == 'true' && !inputs.notion_check }}
         run: |
           set -o pipefail
           mysqldump -h127.0.0.1 -ulifeos -plifeos --single-transaction --no-tablespaces lifeos | gzip -9 \
