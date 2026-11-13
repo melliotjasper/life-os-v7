@@ -342,7 +342,7 @@ class Refresh(Gate):
     def test_every_refresh_name_is_a_domains_refresh_option_and_always_writes(self):
         import yaml
         from pathlib import Path
-        inputs = yaml.safe_load(Path(".github/workflows/domains.yml").read_text())[True]["workflow_dispatch"]["inputs"]
+        inputs = yaml.safe_load(Path(".github/jim-workflows/domains.yml").read_text())[True]["workflow_dispatch"]["inputs"]
         self.assertEqual(["none", *gate.REFRESH], inputs["refresh"]["options"])         # an app's name the workflow lacks would dispatch a 422
         for name, body in gate.REFRESH.items():
             self.assertEqual(body, {"refresh": name, "live": "true"})                    # a dispatch without live is a dry run that redraws nothing

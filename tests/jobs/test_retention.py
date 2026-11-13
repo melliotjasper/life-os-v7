@@ -5,6 +5,9 @@ from unittest import mock
 from lifeos.jobs import retention
 from tests.kit.db import FakeConn
 from tests.kit.notion import LedgerWithFilterLimit, filter_depth
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (14 days, US remote-only, UK lanes); Matt's policy: test_matt_lanes
 
 NOW = dt.datetime(2026, 10, 11, 3, 10)
 
@@ -44,7 +47,7 @@ class FilterShape(unittest.TestCase):
 
     def test_the_filter_still_asks_for_every_protection(self):
         text = str(retention.query_filter(NOW - dt.timedelta(days=retention.RETIRE_DAYS), "US Remote"))
-        for part in ("'Applied'", "'Applied On'", "'Saturn Decision'", "'Visible Lane'", "'US Remote'", "'Posting Date'", "'First Surfaced'", "2026-09-11"):
+        for part in ("'Applied'", "'Applied On'", "'My Decision'", "'Visible Lane'", "'US Remote'", "'Posting Date'", "'First Surfaced'", "2026-09-11"):
             self.assertIn(part, text)
 
 
@@ -121,10 +124,10 @@ class Purge(unittest.TestCase):
 
     def test_applied_and_saturn_decided_rows_are_still_asked_out_by_the_us_remote_query(self):
         text = str(retention.query_filter(NOW - dt.timedelta(days=retention.retire_days("US Remote")[0]), "US Remote"))
-        for part in ("'Applied'", "'Applied On'", "'Saturn Decision'", "2026-09-27"):
+        for part in ("'Applied'", "'Applied On'", "'My Decision'", "2026-09-27"):
             self.assertIn(part, text)
         self.assertEqual(retention.action(dt.date(2026, 9, 1), None, True, None, NOW.date(), 15), None)                 # applied: kept (UNKNOWN until the handoff)
-        self.assertEqual(retention.action(dt.date(2026, 9, 1), None, False, "Go", NOW.date(), 15), None)                # a Saturn Decision: kept
+        self.assertEqual(retention.action(dt.date(2026, 9, 1), None, False, "Go", NOW.date(), 15), None)                # a My Decision: kept
         self.assertEqual(retention.action(dt.date(2026, 9, 1), None, False, None, NOW.date(), 15), "retire")
 
     def test_the_ledgers_own_spelling_of_a_lane_is_asked_for_not_the_databases(self):

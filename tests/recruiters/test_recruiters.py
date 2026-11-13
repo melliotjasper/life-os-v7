@@ -557,12 +557,12 @@ class ContractTests(unittest.TestCase):
             if name == "mail.py":
                 continue                                                                     # the shared platform record may read the Outlook token table; it creates nothing
             self.assertNotRegex(text, r"CREATE TABLE|lifeos\.hiring|lifeos\.jobs|snapshot_store|platform import db\b|TinyFish|tinyfish", name)
-        workflows = self.ROOT / ".github" / "workflows"
+        workflows = self.ROOT / ".github" / "jim-workflows"
         self.assertNotIn("recruiters", (workflows / "hourly.yml").read_text())
         self.assertNotIn("schedule", (workflows / "recruiters.yml").read_text().split("jobs:")[0].replace("# ", "#"))
 
     def test_the_workflow_is_manual_dry_by_default_and_the_secrets_are_the_recruiters_pair(self):
-        text = (self.ROOT / ".github/workflows/recruiters.yml").read_text()
+        text = (self.ROOT / ".github/jim-workflows/recruiters.yml").read_text()
         self.assertIn("NOTION_RECRUITERS_TOKEN", text)
         self.assertIn("NOTION_RECRUITERS_DATA_SOURCE_ID", text)
         self.assertRegex(text, r"default: false")

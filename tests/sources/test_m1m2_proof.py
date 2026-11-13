@@ -13,6 +13,9 @@ from tests.interview.test_notion import ENV, page
 from tests.kit.tree import Tree
 from tests.sources.test_interview_journey import NotionLike
 from tests.sources.test_interview_journey_proof import qa_workspace
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (US remote-only, UK lanes, keep list); Matt's policy: test_matt_lanes
 
 NOW = datetime(2026, 10, 23, 12, 46, 17, 431743, tzinfo=ev.TZ)      # seconds and fractions, like a real clock (Notion keeps minutes)
 M1M2 = {**ENV, "INTERVIEW_JOURNEY_PROOF": "M1M2"}
@@ -167,7 +170,10 @@ class Scoped(unittest.TestCase):
 
 class M1M2Proof(Scoped):
     def test_every_assertion_passes_on_native_sandbox_surfaces_and_nothing_outside_the_sandbox_is_written(self):
-        counts, client, sources, tree, real_pipeline = self.run_case()
+        from datetime import timezone
+        from lifeos.jobs import enrich
+        with patch.object(enrich, "_now", lambda: NOW.astimezone(timezone.utc).replace(tzinfo=None)):     # the posting is dated NOW; the age check must not read the real clock
+            counts, client, sources, tree, real_pipeline = self.run_case()
         self.assertEqual(counts["proof"], "m1m2")
         self.assertEqual(counts["failed"], 0, json.dumps(counts["assertions"], indent=1))
         self.assertEqual(counts["passed"], 33)

@@ -127,7 +127,7 @@ class Tick(unittest.TestCase):
     def test_workflow_accepts_a_timer_tick_with_the_same_gate(self):
         import pathlib
         root = pathlib.Path(__file__).resolve().parents[2]
-        text = (root / ".github/workflows/hourly.yml").read_text()
+        text = (root / ".github/jim-workflows/hourly.yml").read_text()
         self.assertIn("      tick:", text)
         self.assertIn("inputs.tick", text.split("PIPELINE:")[1].split("\n")[0])
         self.assertIn("TICK: ${{ inputs.tick }}", text)
@@ -267,7 +267,7 @@ class DailyCheckin(unittest.TestCase):
 
 class PurgeIsNamed(unittest.TestCase):
     """D166: the Sunday purge failed twice and the push only said 'finish'. The workflow now names the stage and pushes the purge result itself."""
-    text = (__import__("pathlib").Path(__file__).resolve().parents[2] / ".github/workflows/hourly.yml").read_text()
+    text = (__import__("pathlib").Path(__file__).resolve().parents[2] / ".github/jim-workflows/hourly.yml").read_text()
 
     def test_the_lane_step_lists_purge_and_hands_the_stage_names_to_the_report_job(self):
         self.assertIn("purge=${{ steps.purge.outcome }}", self.text)

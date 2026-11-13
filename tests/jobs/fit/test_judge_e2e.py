@@ -9,6 +9,9 @@ from unittest import mock
 
 from lifeos.jobs.fit import judge, stage
 from tests.jobs.fit.test_judge import JOBS, PROFILE, PROVISIONAL, TODAY, answer
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (UK lanes, keep list); Matt's policy: test_matt_lanes
 
 LANES = {"Newsletter": ("Remote - US", None, "US Remote"), "Scale-Up": ("London, UK", "Scale-up:POSITIVE", "Scale-Up")}
 # case -> (static admission, v2 admission), identical in every lane because the lane rules read the same Fit number

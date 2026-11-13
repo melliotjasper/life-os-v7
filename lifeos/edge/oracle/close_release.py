@@ -112,7 +112,7 @@ def latest(fetch=get):
     `Unit tests` step finished decides, and one still queued or running decides nothing yet."""
     commit = head(fetch)
     runs = json.loads(fetch(f"https://api.github.com/repos/{REPO}/actions/workflows/hourly.yml/runs?branch=main&head_sha={commit}&per_page=20")).get("workflow_runs") or []
-    mine = sorted((r for r in runs if r.get("head_sha") == commit and r.get("head_branch") == "main" and r.get("path") == ".github/workflows/hourly.yml"),
+    mine = sorted((r for r in runs if r.get("head_sha") == commit and r.get("head_branch") == "main" and r.get("path") == ".github/jim-workflows/hourly.yml"),
                   key=lambda r: (r.get("id") or 0, r.get("run_attempt") or 0), reverse=True)
     for run in mine:
         if run.get("status") != "completed":

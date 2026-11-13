@@ -310,7 +310,7 @@ class StageTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
-    text = (ROOT / ".github/workflows/outlook.yml").read_text()
+    text = (ROOT / ".github/jim-workflows/outlook.yml").read_text()
 
     def test_the_sign_in_code_is_visible_while_the_run_waits(self):
         self.assertIn("python -u -m lifeos.run outlook-auth", self.text)         # unbuffered: the code must not wait for process exit

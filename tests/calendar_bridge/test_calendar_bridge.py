@@ -289,7 +289,7 @@ class GcalClientTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
-    text = (ROOT / ".github/workflows/calendar.yml").read_text()
+    text = (ROOT / ".github/jim-workflows/calendar.yml").read_text()
 
     def test_manual_only_with_only_the_calendar_outlook_and_database_secrets(self):
         self.assertNotRegex(self.text, r"\n  (schedule|push|pull_request):")
@@ -304,7 +304,7 @@ class WorkflowTests(unittest.TestCase):
 
 
 class HourlyJobTests(unittest.TestCase):
-    text = (ROOT / ".github/workflows/domains.yml").read_text()
+    text = (ROOT / ".github/jim-workflows/domains.yml").read_text()
 
     def job(self):
         return self.text[self.text.index("\n  outlook:\n"):self.text.index("\n  bills:\n")]

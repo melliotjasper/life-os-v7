@@ -230,6 +230,12 @@ class _Connection:
 
     def _reconnect(self, error):
         """A fresh MySQL session on the same driver object, through the process's tunnel (reopened if it died). Any failure re-raises the lost-session error."""
+        if _direct():
+            try:
+                self._raw.ping(reconnect=True)
+            except Exception:                                                 # noqa: BLE001 - the stage sees the original loss
+                raise error from None
+            return
         try:
             with _lock:
                 if not _alive():
@@ -243,8 +249,53 @@ class _Connection:
             raise error from None
 
 
+DIRECT_FIELDS = ("DB_NAME", "DB_USER", "DB_PASSWORD")
+
+
+def _direct():
+    """Matt's lean store: LIFEOS_STORE_DIRECT=host:port names a MariaDB/MySQL server reachable without SSH (the service container of the daily
+    GitHub Actions run). Unset: the Hostinger SSH tunnel, as before."""
+    value = (os.environ.get("LIFEOS_STORE_DIRECT") or "").strip()
+    if not value:
+        return None
+    host, _, port = value.rpartition(":")
+    if not host or not port.isdigit():
+        raise StoreError("STORE_DIRECT_INVALID")
+    return host, int(port)
+
+
+@contextmanager
+def _connect_direct(address):
+    missing = [f for f in DIRECT_FIELDS if not os.environ.get("LIFEOS_ACQ_" + f)]
+    if missing:
+        raise StoreError("STORE_CONFIG_MISSING:" + ",".join(missing))
+    connection = None
+    for attempt, wait in enumerate((0, 2, 5, 10)):
+        time.sleep(wait)
+        try:
+            import pymysql
+            connection = pymysql.connect(host=address[0], port=address[1], user=os.environ["LIFEOS_ACQ_DB_USER"],
+                                         password=os.environ["LIFEOS_ACQ_DB_PASSWORD"], database=os.environ["LIFEOS_ACQ_DB_NAME"], charset="utf8mb4",
+                                         autocommit=True, connect_timeout=10, read_timeout=60, write_timeout=60)
+            break
+        except Exception:                                                       # noqa: BLE001 - a fixed code, never driver text
+            print(f"store: attempt {attempt + 1} of 4 STORE_DB_CONNECT_FAILED", file=sys.stderr)
+    if connection is None:
+        raise StoreError("STORE_DB_CONNECT_FAILED")
+    try:
+        yield _Connection(connection)
+    finally:
+        with suppress(Exception):
+            connection.close()
+
+
 @contextmanager
 def connect():
+    address = _direct()
+    if address:
+        with _connect_direct(address) as connection:
+            yield connection
+        return
     cfg, jump = _cfg(), _jump_cfg()
     connection, last = None, None
     for attempt in range(len(RETRY_WAITS)):

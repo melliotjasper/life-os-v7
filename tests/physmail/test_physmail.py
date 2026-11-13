@@ -445,7 +445,7 @@ class RuntimePathTests(unittest.TestCase):
             import yaml
         except ImportError:
             self.skipTest("PyYAML not installed")
-        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows"
         domains = yaml.safe_load((root / "domains.yml").read_text())
         job = domains["jobs"]["mail"]
         self.assertEqual(set(job["needs"]), {"jira", "agenda", "bills", "amazon", "attention"})      # the card proves the other regions unchanged, so it runs after their writers

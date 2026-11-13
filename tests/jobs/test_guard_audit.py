@@ -4,7 +4,7 @@ from lifeos.jobs import guard, hiring_pipeline as hp
 from lifeos.platform.notion_client import NotionError
 
 
-BASE = {"Applied": {"checkbox": False}, "Applied On": {"date": None}, "Saturn Decision": {"select": None}}
+BASE = {"Applied": {"checkbox": False}, "Applied On": {"date": None}, "My Decision": {"select": None}}
 
 
 class Page:
@@ -24,12 +24,12 @@ class Guard(unittest.TestCase):
     def test_each_human_state_protects(self):
         self.assertEqual(guard.protection(Page({"Applied": {"checkbox": True}}), "p", "X", "Y"), "applied")
         self.assertEqual(guard.protection(Page({"Applied On": {"date": {"start": "2026-09-01"}}}), "p", "X", "Y"), "applied_on")
-        self.assertEqual(guard.protection(Page({"Saturn Decision": {"select": {"name": "Pursue"}}}), "p", "X", "Y"), "saturn_decision")
+        self.assertEqual(guard.protection(Page({"My Decision": {"select": {"name": "Pursue"}}}), "p", "X", "Y"), "saturn_decision")
         self.assertEqual(guard.protection(Page(), "p", "Acme Inc", "Programme Manager", OPP), "hiring_pipeline")
 
     def test_unreadable_fails_closed_and_nothing_to_protect_is_none(self):
         self.assertEqual(guard.protection(Page(fail=True), "p", "X", "Y"), "unreadable")
-        self.assertIsNone(guard.protection(Page({"Applied": {"checkbox": False}, "Saturn Decision": {"select": None}}), "p", "X", "Y", OPP))
+        self.assertIsNone(guard.protection(Page({"Applied": {"checkbox": False}, "My Decision": {"select": None}}), "p", "X", "Y", OPP))
 
 
 class AuditNeverDestroysAPursuit(unittest.TestCase):

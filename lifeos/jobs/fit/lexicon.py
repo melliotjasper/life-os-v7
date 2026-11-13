@@ -84,10 +84,8 @@ HEADINGS = (
 
 # Generic exclusion defaults. Rules: terms (word match) and/or patterns (regex). `strict` = any hit anywhere is hard.
 DEFAULT_EXCLUSIONS = (
-    {"id": "clinical", "reason": "clinical", "terms": ["clinical"]},
-    # D111: a fintech that serves healthcare workers (Stream) names healthcare a few times without being a healthcare job. In the title or the company it is still hard;
-    # in the text it takes four mentions, and a mention in the first 600 characters is no longer enough on its own.
-    {"id": "healthcare", "reason": "healthcare", "terms": ["healthcare", "health care", "health-care"], "min_hits": 4},
+    # Matt (MEJ-215): healthcare and digital-health companies are in scope (Teladoc-style product roles), so Jim's blanket "clinical" and "healthcare"
+    # text rules are gone. Clinical professions (nurse, physician, ...) and hospital/clinic employers below still exclude: they are not product jobs.
     # D89: a different profession in the TITLE (or a hospital as the employer) is never a Fit, whatever generic requirements the posting lists.
     {"id": "hr_function", "reason": "HR / people function", "where": "title", "patterns": [
         r"\bhuman resources\b", r"\bHR\b", r"\bTA\b", r"talent acquisition", r"\brecruit\w*", r"talent partner", r"people operations",
@@ -102,7 +100,7 @@ DEFAULT_EXCLUSIONS = (
         r"\binternal audit\b", r"\bauditor\b", r"\bregulatory (?:compliance|affairs|reporting)\b", r"\bcompliance (?:manager|officer|director|lead|head|partner)\b", r"\bchief risk\b", r"\bhead of (?:\w+ )?risk\b",
         r"(?<!program )(?<!project )(?<!delivery )\brisk (?:manager|director|lead|partner|head)\b", r"\b(?:operational|enterprise|business|credit|market|financial|liquidity|model|conduct) risk\b",
         r"\bcredit (?:analyst|officer|manager|controller)\b", r"\bcollateral\b", r"\bpayments? (?:fraud|compliance)\b"]},
-    # D114: Jim's own call on five roles that kept passing on generic strengths: enablement, engineering leadership, training and events are not his function.
+    # D114: enablement, engineering leadership, training and events roles keep passing on generic strengths; they are not a product leader's function.
     {"id": "not_my_function", "reason": "enablement / engineering leadership / training / events role", "where": "title", "patterns": [
         r"\b(?:revenue|sales|go[- ]to[- ]market|gtm) enablement\b", r"\b(?:director|head|vp|vice president) of engineering\b",
         r"\b(?:technical |sales |customer |product )?trainer\b", r"\bevents? (?:manager|lead|director|marketing)\b"]},
@@ -121,10 +119,10 @@ DEFAULT_EXCLUSIONS = (
         r"\badmissions?\b", r"\bprofessor\b", r"\bacademic\b", r"\binstructor\b", r"\btutor\b"]},
     {"id": "school_employer", "reason": "school employer", "where": "company", "patterns": [r"\bschools?\b", r"\bacademy\b"]},
     {"id": "medical_role", "reason": "medical / clinical role", "where": "title", "patterns": [
-        r"\bsurgical\b", r"\bsurgery\b", r"\bpatient\w*", r"\bnursing\b", r"\bnurse\b", r"\bphysician\b", r"\bhospital\b",
+        r"\bsurgical\b", r"\bsurgery\b", r"^(?!.*\bproduct\b).*\bpatient\w*", r"\bnursing\b", r"\bnurse\b", r"\bphysician\b", r"\bhospital\b",
         r"\bdental\b", r"\bpharmac\w+", r"\btherapist\b", r"\bradiolog\w+", r"\bmedical (?:assistant|director|records)\b"]},
     {"id": "healthcare_employer", "reason": "hospital / clinic employer", "where": "company", "patterns": [
-        r"\bclinic\b", r"\bhospitals?\b", r"health system", r"medical center", r"\bhealthcare\b", r"health care"]},
+        r"\bclinic\b", r"\bhospitals?\b", r"health system", r"medical center"]},
     {"id": "clearance", "reason": "security clearance", "strict": True, "patterns": [
         r"(?:active|current|valid|secret|top secret|ts/sci|dod|government|security|public trust)\s+(?:security\s+)?clearance",
         r"clearance\s+(?:is\s+)?(?:required|needed|mandatory)", r"\bts\s*/\s*sci\b", r"must\s+(?:be able to\s+)?obtain\s+a?\s*clearance"]},

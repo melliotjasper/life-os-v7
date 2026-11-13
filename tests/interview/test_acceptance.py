@@ -106,7 +106,7 @@ class Delegation(unittest.TestCase):
 
 
 class WorkflowWiring(unittest.TestCase):
-    text = (ROOT / ".github/workflows/hourly.yml").read_text()
+    text = (ROOT / ".github/jim-workflows/hourly.yml").read_text()
 
     def job(self):
         start = self.text.index("\n  interview:\n")

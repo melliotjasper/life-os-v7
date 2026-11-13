@@ -11,7 +11,7 @@ try:
 except ImportError:                                                         # the workflow contract tests skip without PyYAML, as the others do
     yaml = None
 
-WORKFLOW = pathlib.Path(__file__).resolve().parents[3] / ".github" / "workflows" / "hourly.yml"
+WORKFLOW = pathlib.Path(__file__).resolve().parents[3] / ".github" / "jim-workflows" / "hourly.yml"
 TOKEN = re.compile(r"\s*(?:(\$\{\{)|(\}\})|('(?:[^']|'')*')|(&&|\|\||==|!=|!|\(|\)|,)|(-?\d+(?:\.\d+)?)|([A-Za-z_][\w\-]*(?:\.[\w\-]+)*))")
 
 
@@ -253,7 +253,7 @@ class TheHourIsFilled(unittest.TestCase):
         import subprocess
         import tempfile
         import yaml
-        doc = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".github", "workflows", "hourly.yml")))
+        doc = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".github", "jim-workflows", "hourly.yml")))
         script = next(s["run"] for s in doc["jobs"]["finish"]["steps"] if s.get("id") == "fit_cloud_backlog")
         now = 1792500000 - (1792500000 % 3600) + minute * 60 + second
         with tempfile.TemporaryDirectory() as d:

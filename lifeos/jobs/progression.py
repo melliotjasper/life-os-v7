@@ -1,7 +1,7 @@
 """Does a protected human pursuit exist for this job? Retention asks here and never reads a Notion stage field.
 
-v0 (until the Interview OS progression handoff, INT-7.1A, exists): the only human-owned facts Jobs can read are Applied and a Saturn Decision.
-  Saturn Decision set        -> PROTECTED (a human decision exists)
+v0 (until the Interview OS progression handoff, INT-7.1A, exists): the only human-owned facts Jobs can read are Applied and a My Decision.
+  My Decision set        -> PROTECTED (a human decision exists)
   Applied, no other evidence -> UNKNOWN   (Jobs cannot prove there is no recruiter or interview progression; retention fails closed)
   neither                    -> NOT_PROTECTED (no pursuit has started)
 Legacy Lifecycle / Liveness values never decide this. When INT-7.1A lands, its evidence replaces the Applied rule here and nothing else changes.

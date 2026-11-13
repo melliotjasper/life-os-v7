@@ -53,7 +53,7 @@ class PurgeTests(unittest.TestCase):
     def test_applied_and_decided_jobs_are_never_retired(self):
         old = self.TODAY - timedelta(days=200)
         self.assertIsNone(retention.action(old, None, True, None, self.TODAY))                 # Applied: UNKNOWN until INT-7.1A
-        self.assertIsNone(retention.action(old, None, False, "Pass", self.TODAY))              # a Saturn Decision protects it
+        self.assertIsNone(retention.action(old, None, False, "Pass", self.TODAY))              # a My Decision protects it
         self.assertEqual(progression.resolve(True), progression.UNKNOWN)
         self.assertEqual(progression.resolve(True, interview_evidence=False), progression.NOT_PROTECTED)
         self.assertEqual(progression.resolve(True, interview_evidence=True), progression.PROTECTED)
@@ -62,7 +62,7 @@ class PurgeTests(unittest.TestCase):
     def test_query_never_selects_acted_on_rows_and_uses_the_employer_clock(self):
         flt = retention.query_filter(NOW, "US Remote")["and"]
         props = [f.get("property") for f in flt]
-        for needed in ("Applied", "Applied On", "Saturn Decision", "Visible Lane"):
+        for needed in ("Applied", "Applied On", "My Decision", "Visible Lane"):
             self.assertIn(needed, props)
         text = str(flt)
         self.assertIn("Posting Date", text)

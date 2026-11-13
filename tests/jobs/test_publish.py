@@ -3,6 +3,9 @@ import unittest
 
 from lifeos.jobs import identity, publish
 from lifeos.platform import limits, notion_client
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (US remote-only, UK lanes, keep list); Matt's policy: test_matt_lanes
 
 
 class BodyTests(unittest.TestCase):
@@ -39,7 +42,7 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(props["Source Types"]["multi_select"][0]["name"], "Lensa")
         self.assertEqual(props["Visible Lane"]["select"]["name"], "US Remote")      # the lane comes from the job row
         self.assertEqual(props["Posting Date"]["date"]["start"], "2026-09-28")
-        for fit in ("LIFE OS Fit", "Saturn Decision", "Provider Score"):
+        for fit in ("LIFE OS Fit", "My Decision", "Provider Score"):
             self.assertNotIn(fit, props)
 
     def test_fit_fields_appear_only_when_scored(self):

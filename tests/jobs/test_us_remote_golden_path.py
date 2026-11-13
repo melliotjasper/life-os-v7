@@ -18,6 +18,9 @@ from lifeos.jobs import enrich, identity
 from lifeos.platform.http import Fetched
 from lifeos.sources.web import boards, lister
 from tests.jobs import test_newsletter_golden_path as gate
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (US remote-only, UK lanes, keep list); Matt's policy: test_matt_lanes
 
 NOW = datetime.now().replace(microsecond=0)
 BOARD = {"id": "gh-acme", "company": "Acme", "tier": "employer", "kind": "greenhouse", "status": "ready", "enabled": True, "slug": "acme",
@@ -186,7 +189,7 @@ class VacancyIdentity(unittest.TestCase):
                 return {}
             return real(method, path, body)
         for page_id, page in self.j.ledger.pages.items():
-            page["props"].update({"Applied": {"checkbox": page_id in applied}, "Applied On": {"date": None}, "Saturn Decision": {"select": None}})
+            page["props"].update({"Applied": {"checkbox": page_id in applied}, "Applied On": {"date": None}, "My Decision": {"select": None}})
         with mock.patch.object(self.j.ledger, "call", call), mock.patch.object(audit.notion_client, "Client", lambda environ: self.j.ledger):
             counts = audit.run(500, True, gate.ENV)
         return counts, trashed
@@ -235,6 +238,6 @@ class VacancyIdentity(unittest.TestCase):
         self.published_copy(url, "li", source="linkedin-alerts")
         counts, trashed = self.audit()
         self.assertEqual((counts["by_reason"].get("duplicate_page", 0), trashed), (0, []))
-        self.j.ledger.pages["li"]["props"].pop("Saturn Decision")                         # and an unreadable safety property protects, never guesses
+        self.j.ledger.pages["li"]["props"].pop("My Decision")                         # and an unreadable safety property protects, never guesses
         from lifeos.jobs import guard
         self.assertEqual(guard.protection(self.j.ledger, "li", "Acme", REQS["8002"][0]), guard.UNREADABLE)

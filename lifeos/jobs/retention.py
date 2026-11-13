@@ -2,7 +2,7 @@
 
 Hostinger: job descriptions go at 90 days; job rows that were never published or are already PURGED go at 365; suppression tombstones expire at 90 days.
 Notion, OUR pages only (matched by stored page id; pre-existing ledger rows are never touched):
-  an UNAPPLIED job with no Saturn Decision whose age is 30+ days (employer Posting Date, else First Surfaced; never Created At)
+  an UNAPPLIED job with no My Decision whose age is 30+ days (employer Posting Date, else First Surfaced; never Created At)
   and for which progression.resolve says NOT_PROTECTED  ->  trashed (recoverable 30 days), marked PURGED here, and a 90-day tombstone is written.
 A job read off its employer's own board (source web:<board>) is open while the board lists it (D111): it is retired only once a complete listing of that board no longer has it (D167).
 LIFE-212 (Jim, Oct 31 2026): a lane whose policy judges employer-board jobs by age (US Remote 14 days, Scale-Up 30) retires a job older than that age, listed on its board or not.
@@ -31,7 +31,7 @@ def _now():
 
 
 def query_filter(cutoff, lane):
-    """Unapplied, no Saturn Decision, our lane, and old by the Posting Date or the First Surfaced date. The legacy Lifecycle field is not read.
+    """Unapplied, no My Decision, our lane, and old by the Posting Date or the First Surfaced date. The legacy Lifecycle field is not read.
     Notion allows a compound filter two levels deep (an `and` holding one `or`); the earlier shape nested a third level and Notion refused every
     weekly query with HTTP 400. The two date tests are therefore one flat `or`, which can also return a row with a recent Posting Date and an old
     First Surfaced; `action` re-checks each candidate against the employer Posting Date (else First Surfaced) before anything is retired."""
@@ -39,7 +39,7 @@ def query_filter(cutoff, lane):
     return {"and": [
         {"property": "Applied", "checkbox": {"equals": False}},
         {"property": "Applied On", "date": {"is_empty": True}},            # an Applied On date is human state even if the checkbox is clear
-        {"property": "Saturn Decision", "select": {"is_empty": True}},
+        {"property": "My Decision", "select": {"is_empty": True}},
         {"property": "Visible Lane", "select": {"equals": lane}},
         {"or": [{"property": "Posting Date", "date": {"before": day}},
                 {"property": "First Surfaced", "date": {"before": day}}]},
@@ -163,7 +163,7 @@ def purge_notion(live, now, environ=None):
         return counts
     writes, today = 0, now.date()
     for page_id, ((job_id, key, fuzzy, company, title), posted, first, lane) in ours.items():
-        # the filter already excluded Applied and Saturn Decision rows; the handoff can still protect an unapplied pursuit
+        # the filter already excluded Applied and My Decision rows; the handoff can still protect an unapplied pursuit
         if page_id in open_on_board:
             continue
         if hiring_pipeline.handoff_for(company, title, opportunities).protected:

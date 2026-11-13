@@ -13,14 +13,14 @@ except ImportError:          # PyYAML is a dev convenience, not a runtime depend
 class WorkflowTests(unittest.TestCase):
     def test_every_workflow_file_parses_and_every_manual_one_declares_its_dispatch(self):
         """A workflow that is not valid YAML is silently not runnable (safety.yml shipped that way once)."""
-        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows"
         for path in sorted(root.glob("*.y*ml")):
             data = yaml.safe_load(path.read_text())
             self.assertIn("jobs", data, path.name)
             self.assertTrue("on" in data or True in data, path.name)
 
     def test_safety_workflow_is_weekly_and_manual_with_its_stages(self):
-        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows"
         data = yaml.safe_load((root / "safety.yml").read_text())
         self.assertEqual(sorted(data[True]), ["schedule", "workflow_dispatch"])         # Jim's weekly check (D142); a scheduled run has no input, so the stage defaults to all
         self.assertEqual(data[True]["schedule"], [{"cron": "17 13 * * 1"}])
@@ -28,7 +28,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(data[True]["workflow_dispatch"]["inputs"]["stage"]["options"], ["all", "sql-smoke", "fit-golden", "fit-capture"])
 
     def test_hourly_workflow_is_valid_yaml_with_dispatch_inputs(self):
-        path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows" / "hourly.yml"
+        path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows" / "hourly.yml"
         data = yaml.safe_load(path.read_text())
         self.assertIn("workflow_dispatch", data[True])
         self.assertIn("live", data[True]["workflow_dispatch"]["inputs"])
@@ -39,7 +39,7 @@ class WorkflowTests(unittest.TestCase):
         import os
         import subprocess
         import tempfile
-        path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows" / "hourly.yml"
+        path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows" / "hourly.yml"
         data = yaml.safe_load(path.read_text())
         steps = data["jobs"]["finish"]["steps"]
         index = next(i for i, step in enumerate(steps) if step.get("id") == "publish")
@@ -75,7 +75,7 @@ class WorkflowTests(unittest.TestCase):
         separate lane jobs run only on a manual run; Dice has no job of its own (the tick resolves it); a parked tick starts no Jobs job."""
         from pathlib import Path
         from lifeos.jobs import tick
-        path = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "hourly.yml"
+        path = Path(__file__).resolve().parents[2] / ".github" / "jim-workflows" / "hourly.yml"
         data = yaml.safe_load(path.read_text())
         self.assertNotIn("resolve_dice", data[True]["workflow_dispatch"]["inputs"])
         self.assertNotIn("dice", data["jobs"])
@@ -99,14 +99,14 @@ class WorkflowTests(unittest.TestCase):
         """D212: after a manual (or cancelled) hourly run the workflow_run event has no inputs, and `inputs.jira != 'none'` was true for an empty input, so every manual
         hourly run also wrote the Jira snapshot and card. Only a completed tick or a domains dispatch that asks for Jira starts it now."""
         from pathlib import Path
-        condition = yaml.safe_load((Path(__file__).resolve().parents[2] / ".github/workflows/domains.yml").read_text())["jobs"]["jira"]["if"]
+        condition = yaml.safe_load((Path(__file__).resolve().parents[2] / ".github/jim-workflows/domains.yml").read_text())["jobs"]["jira"]["if"]
         self.assertIn("(github.event_name == 'workflow_dispatch' && inputs.jira != 'none')", condition)
         self.assertIn("github.event.workflow_run.display_title == 'tick'", condition)
         self.assertNotIn("|| inputs.jira != 'none'", condition)
 
     def test_domain_jobs_left_hourly_and_run_after_a_tick_from_domains(self):
         from pathlib import Path
-        root = Path(__file__).resolve().parents[2] / ".github/workflows"
+        root = Path(__file__).resolve().parents[2] / ".github/jim-workflows"
         hourly = yaml.safe_load((root / "hourly.yml").read_text())
         domains = yaml.safe_load((root / "domains.yml").read_text())
         for name in ("jira", "outlook", "bills", "agenda", "amazon"):
@@ -124,7 +124,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_bills_paid_runs_on_a_tick_before_the_snapshot_and_follows_the_live_flag(self):
         from pathlib import Path
-        domains = yaml.safe_load((Path(__file__).resolve().parents[2] / ".github/workflows/domains.yml").read_text())
+        domains = yaml.safe_load((Path(__file__).resolve().parents[2] / ".github/jim-workflows/domains.yml").read_text())
         steps = domains["jobs"]["bills"]["steps"]
         ids = [s.get("id") for s in steps]
         self.assertLess(ids.index("bpaid"), ids.index("bsnap"))                        # the snapshot sees the advanced dates
@@ -137,8 +137,8 @@ class WorkflowTests(unittest.TestCase):
     def test_the_manual_amazon_orders_pass_queues_with_the_domain_jobs_and_maintenance_does_not(self):
         from pathlib import Path
         root = Path(__file__).resolve().parents[2]
-        amazon = yaml.safe_load((root / ".github/workflows/amazon.yml").read_text())
-        domains = yaml.safe_load((root / ".github/workflows/domains.yml").read_text())
+        amazon = yaml.safe_load((root / ".github/jim-workflows/amazon.yml").read_text())
+        domains = yaml.safe_load((root / ".github/jim-workflows/domains.yml").read_text())
         group = amazon["concurrency"]["group"]
         self.assertIn("inputs.stage == 'orders'", group)
         self.assertIn("|| 'life-os-v7-domains') }}", domains["concurrency"]["group"])       # the domain jobs hold this group when they really run ...
@@ -154,8 +154,8 @@ class WorkflowTests(unittest.TestCase):
     def test_amazon_manual_workflow_is_dry_by_default_and_adds_no_hourly_input(self):
         from pathlib import Path
         root = Path(__file__).resolve().parents[2]
-        hourly = yaml.safe_load((root / ".github/workflows/hourly.yml").read_text())
-        manual = yaml.safe_load((root / ".github/workflows/amazon.yml").read_text())
+        hourly = yaml.safe_load((root / ".github/jim-workflows/hourly.yml").read_text())
+        manual = yaml.safe_load((root / ".github/jim-workflows/amazon.yml").read_text())
         self.assertNotIn("amazon", hourly[True]["workflow_dispatch"]["inputs"])
         self.assertIs(manual[True]["workflow_dispatch"]["inputs"]["live"]["default"], False)
 
@@ -163,7 +163,7 @@ class WorkflowTests(unittest.TestCase):
         """EDGE-1.3 Phase B: exactly the Gmail client secret, Gmail refresh token and Notion Amazon token come from Bitwarden; the client id and data-source id stay GitHub secrets."""
         import re
         from pathlib import Path
-        text = (Path(__file__).resolve().parents[2] / ".github/workflows/amazon.yml").read_text()
+        text = (Path(__file__).resolve().parents[2] / ".github/jim-workflows/amazon.yml").read_text()
         manual = yaml.safe_load(text)
         inputs = manual[True]["workflow_dispatch"]["inputs"]
         self.assertEqual(list(manual[True]), ["workflow_dispatch"])                                       # manual only: no schedule, push or other trigger
@@ -185,7 +185,7 @@ class WorkflowTests(unittest.TestCase):
         normal pass listed the whole mailbox and stopped at the 200-message limit."""
         import re
         from pathlib import Path
-        text = (Path(__file__).resolve().parents[2] / ".github/workflows/amazon.yml").read_text()
+        text = (Path(__file__).resolve().parents[2] / ".github/jim-workflows/amazon.yml").read_text()
         step_env = yaml.safe_load(text)["jobs"]["amazon"]["steps"][-1]["env"]
         expression = step_env["AMAZON_SINCE"]
         self.assertEqual(expression, "${{ inputs.stage == 'backfill' && inputs.since || '' }}")
@@ -202,7 +202,7 @@ class WorkflowTests(unittest.TestCase):
         """EDGE-1.3 Phase B: the read-only diagnostic keeps its manual contract; only the SSH port is still a GitHub secret besides the Bitwarden bootstrap token."""
         import re
         from pathlib import Path
-        text = (Path(__file__).resolve().parents[2] / ".github/workflows/diag.yml").read_text()
+        text = (Path(__file__).resolve().parents[2] / ".github/jim-workflows/diag.yml").read_text()
         diag = yaml.safe_load(text)
         moved = {"LIFEOS_ACQ_DB_NAME": "d71bbaed-6a6c-49b5-8a1f-b4db015ecfda", "LIFEOS_ACQ_DB_PASSWORD": "00d82e0d-be10-4c8c-bdbe-b4db015ed389", "LIFEOS_ACQ_DB_USER": "9422b842-3bb0-4153-bb8d-b4db015ed746",
                  "LIFEOS_ACQ_SSH_HOST": "6f1c86f6-c48f-4e77-b65d-b4db015edb15", "LIFEOS_ACQ_SSH_KNOWN_HOSTS": "b65dd2fc-2573-4bda-9e80-b4db015edec6",
@@ -283,7 +283,7 @@ class WorkflowTests(unittest.TestCase):
 @unittest.skipIf(yaml is None, "PyYAML not installed")
 class PullRequestTestsWorkflow(unittest.TestCase):
     """pr-tests.yml is the secret-free pull request check (and, since Oct 25 2026, the check of every merge to main): read-only, no secret, no loader, no database, the one accepted test command and the 45 s / 75 s suite limits (75 since Jim, Oct 25 2026)."""
-    path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows" / "pr-tests.yml"
+    path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows" / "pr-tests.yml"
 
     def test_it_runs_on_pull_requests_and_main_only_read_only_and_holds_no_secret(self):
         text, doc = self.path.read_text(), yaml.safe_load(self.path.read_text())
@@ -314,7 +314,7 @@ class FastPathFirstTests(unittest.TestCase):
             import yaml
         except ImportError:
             raise unittest.SkipTest("PyYAML not installed")
-        root = pathlib.Path(__file__).resolve().parents[2] / ".github/workflows"
+        root = pathlib.Path(__file__).resolve().parents[2] / ".github/jim-workflows"
         cls.hourly = yaml.safe_load((root / "hourly.yml").read_text())
 
     def test_bulk_discovery_runs_after_publish_and_finalize(self):
@@ -343,7 +343,7 @@ class IsolatedJobTests(unittest.TestCase):
     def test_no_workflow_level_secret_reaches_an_isolated_job(self):
         import yaml
         from pathlib import Path
-        doc = yaml.safe_load((Path(__file__).resolve().parents[2] / ".github/workflows/hourly.yml").read_text())
+        doc = yaml.safe_load((Path(__file__).resolve().parents[2] / ".github/jim-workflows/hourly.yml").read_text())
         shared = {k: v for k, v in (doc.get("env") or {}).items() if "secrets." in str(v)}
         self.assertEqual(sorted(shared), ["GMAIL_OAUTH_CLIENT_ID", "HIRING_PIPELINE_PAGE_ID", "LIFEOS_ACQ_SSH_PORT", "NOTION_JOB_LEDGER_DATA_SOURCE_ID"])   # EDGE-1.3: migrated values are no longer workflow level
         needs = {"interview": {"HIRING_PIPELINE_PAGE_ID"}}                  # the Interview job reads the Hiring Pipeline page by id
@@ -354,7 +354,7 @@ class IsolatedJobTests(unittest.TestCase):
 
     def test_python_setup_is_declared_once(self):
         from pathlib import Path
-        for path in (Path(__file__).resolve().parents[2] / ".github/workflows").glob("*.yml"):
+        for path in (Path(__file__).resolve().parents[2] / ".github/jim-workflows").glob("*.yml"):
             self.assertNotIn("setup-python", path.read_text(), path.name)
 
 
@@ -394,7 +394,7 @@ class DomainsWorkflowTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows" / "domains.yml"
+        path = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows" / "domains.yml"
         cls.doc = yaml.safe_load(path.read_text())
 
     def test_no_secret_is_declared_at_the_top(self):
@@ -418,10 +418,10 @@ class DomainsWorkflowTests(unittest.TestCase):
         for job, ident in seen:
             step = next(s for s in self.doc["jobs"][job]["steps"] if s.get("id") == ident)
             self.assertEqual(step["env"]["V7_CLOSE_BASE_URL"], "${{ secrets.V7_CLOSE_BASE_URL }}")
-        for path in (pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows").glob("*.y*ml"):
+        for path in (pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows").glob("*.y*ml"):
             if path.name not in ("domains.yml", "hourly.yml"):
                 self.assertNotIn("V7_CLOSE_BASE_URL", path.read_text(), path.name)
-        hourly = yaml.safe_load((pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows" / "hourly.yml").read_text())
+        hourly = yaml.safe_load((pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows" / "hourly.yml").read_text())
         named = [(job, step.get("id")) for job, spec in hourly["jobs"].items() for step in spec.get("steps", []) if "V7_CLOSE_BASE_URL" in str(step)]
         self.assertEqual(named, [("finish", "network_surface")])                                   # the Jobs pipeline's one reader: it never reaches the other finish steps
         self.assertEqual(next(s for s in hourly["jobs"]["finish"]["steps"] if s.get("id") == "network_surface")["env"]["V7_CLOSE_BASE_URL"], "${{ secrets.V7_CLOSE_BASE_URL }}")
@@ -813,7 +813,7 @@ class BitwardenConsumerTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "workflows"
+        cls.root = pathlib.Path(__file__).resolve().parents[2] / ".github" / "jim-workflows"
         cls.text = {n: (cls.root / f"{n}.yml").read_text() for n in CONSUMERS}
         cls.doc = {n: yaml.safe_load(t) for n, t in cls.text.items()}
 
@@ -913,7 +913,7 @@ class ProfileSyncWorkflowTests(unittest.TestCase):
     """The Fit profile sync reads the store credentials from Bitwarden like any store job, writes nothing to Bitwarden, and holds one Notion read token for one page."""
 
     def setUp(self):
-        self.root = pathlib.Path(".github/workflows")
+        self.root = pathlib.Path(".github/jim-workflows")
         self.text = (self.root / "profile-sync.yml").read_text()
         self.doc = yaml.safe_load(self.text)
 

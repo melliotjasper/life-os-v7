@@ -284,7 +284,9 @@ def evaluate(title, company, text, profile, today, semantic=None):
         why = f"Meets the {GO_THRESHOLD}% bar."
     flat = ([Req("role", _short(title), title_cls, Fraction(1), title_strength)] if title_strength else []) + reqs
     confident = len(reqs) >= 8 and len(text) >= 1200 and len([d for d in buckets if d != "role"]) >= 2
-    result = Result(score, decision, _line(score, decision, flat, gate), why, exclusion=gate["id"] if gate else None,
+    flagged = exclusions.flags(title, company, profile)
+    line = _line(score, decision, flat, gate) + (f" | Culture flag: {', '.join(flagged)}" if flagged else "")
+    result = Result(score, decision, line, why, exclusion=gate["id"] if gate else None,
                     confidence="high" if confident else "low", capped=capped,
                     buckets={NAMES[d]: v for d, v in buckets.items()},
                     items=[[r.dim, r.label, r.cls, float(r.weight)] for r in flat][:80], soft=soft, pre_functional=result_pre)

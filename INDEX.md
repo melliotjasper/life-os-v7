@@ -49,6 +49,7 @@ These repository files hold feature scoping, setup, history or one product area'
 | [`docs/INTERVIEW_HANDOFF.md`](docs/INTERVIEW_HANDOFF.md) |
 | [`docs/LANES.md`](docs/LANES.md) |
 | [`docs/MASTER_ROADMAP.md`](docs/MASTER_ROADMAP.md) |
+| [`docs/MATT_SETUP.md`](docs/MATT_SETUP.md) |
 | [`docs/MEGIBOW_SCOPE.md`](docs/MEGIBOW_SCOPE.md) |
 | [`docs/NETWORK_INTELLIGENCE_SCOPE.md`](docs/NETWORK_INTELLIGENCE_SCOPE.md) |
 | [`docs/NOTION_INTEGRATIONS.md`](docs/NOTION_INTEGRATIONS.md) |

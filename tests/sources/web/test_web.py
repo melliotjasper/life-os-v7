@@ -8,6 +8,9 @@ from unittest import mock
 from lifeos.platform import limits
 from lifeos.platform.http import Fetched
 from lifeos.sources.web import diff, lister, run, suppress
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (US remote-only, UK lanes, keep list); Matt's policy: test_matt_lanes
 
 NOW = datetime(2026, 10, 1, 12, 0)
 

@@ -9,6 +9,21 @@ from lifeos.sources.newsletters.parsers import dice, lensa
 from tests.kit.db import FakeConn
 from tests.kit.gmail import FakeGmail
 from tests.sources.newsletters.parsers.test_dice_reed import DICE, DICE_DAY2
+from tests.kit import jim_lanes
+
+_MAX_AGE = {}
+
+
+def setUpModule():                    # Jim's lane mechanisms and his 14-day mail window (ingest reads the lane's age once, at import); Matt's policy: test_matt_lanes
+    jim_lanes.install()
+    from lifeos.sources.newsletters import ingest as module
+    _MAX_AGE["v"], module.MAX_AGE_DAYS = module.MAX_AGE_DAYS, 14
+
+
+def tearDownModule():
+    from lifeos.sources.newsletters import ingest as module
+    module.MAX_AGE_DAYS = _MAX_AGE["v"]
+    jim_lanes.uninstall()
 
 
 def store_double():

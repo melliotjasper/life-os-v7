@@ -9,6 +9,9 @@ from lifeos.jobs import fit_sync, publish
 from lifeos.jobs.fit import backlog, cloud, edge, stage
 from tests.jobs.fit.test_cloud import Base, GOOD, PROFILE, T
 from tests.jobs.fit.test_edge import RECEIPT, Endpoint, refusal, reply
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (UK lanes, keep list); Matt's policy: test_matt_lanes
 
 USAGE = {"input_tokens": 1389, "cached_input_tokens": 0, "cache_write_tokens": 0, "output_tokens": 69, "reasoning_tokens": "unavailable", "total_tokens": 1458}
 ENV = {"V7_CLOUD_FIT_PROFILE_REF": "0123456789abcdef", "IMESSAGE_ALERTS_HOST": "oracle.example", "V7_FIT_GATE": "true", "V7_CLOUD_FIT_BACKLOG_MAX": "10",
@@ -324,7 +327,7 @@ class PublishedJobs(Batch):
         self.assertEqual(props["LIFE OS Fit"], {"number": 90})
         self.assertTrue(props["Why It Fits"]["rich_text"][0]["text"]["content"].startswith("Cloud Fit 90% (gpt-6-luna): "))
         self.assertEqual(props["Admission Status"], {"select": {"name": "Admitted"}})
-        self.assertFalse({"Applied", "Applied On", "Saturn Decision", "Job"} & set(props))      # human state and the title are never written
+        self.assertFalse({"Applied", "Applied On", "My Decision", "Job"} & set(props))      # human state and the title are never written
         self.assertFalse([c for c in self.client.call.call_args_list if c.args[0] in ("POST", "DELETE") and not c.args[1].endswith("/query")] or any("in_trash" in (c.args[2] if len(c.args) > 2 else {}) for c in self.client.call.call_args_list))
         synced, scored = self.db.raw.execute("SELECT j.fit_synced_at, f.scored_at FROM v7_jobs j JOIN v7_job_fit f ON f.job_id = j.id WHERE j.id = 1").fetchone()
         self.assertGreaterEqual(str(synced), str(scored))
@@ -399,7 +402,7 @@ class FailureReachesTheRun(Batch):
     def workflow(self):
         import pathlib
         import yaml
-        data = yaml.safe_load((pathlib.Path(__file__).resolve().parents[3] / ".github" / "workflows" / "hourly.yml").read_text())
+        data = yaml.safe_load((pathlib.Path(__file__).resolve().parents[3] / ".github" / "jim-workflows" / "hourly.yml").read_text())
         steps = data["jobs"]["finish"]["steps"]
         return data, steps, next(s for s in steps if s.get("id") == "fit_cloud_backlog"), next(s for s in steps if s.get("id") == "lanes")
 
@@ -503,7 +506,7 @@ class HeldAnswersAreApplied(Batch):
 
 
 class KeepListRolesAreRedecided(Batch):
-    """A role put on Jim's keep list AFTER the cloud had scored and excluded it is re-decided from its stored cloud score by the current lane policy; no other role is."""
+    """A role put on the keep list AFTER the cloud had scored and excluded it is re-decided from its stored cloud score by the current lane policy; no other role is."""
 
     def excluded(self, job_id, title, company="Revolut Ltd", score=58):
         self.titled(job_id, title, status="EXCLUDED_FIT", admission="EXCLUDE", cloud_status="CANARY")

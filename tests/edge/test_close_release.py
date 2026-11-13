@@ -122,7 +122,7 @@ class IsolatedTree(unittest.TestCase):
 
 class AutoRelease(unittest.TestCase):
     """Jim, Oct 24: the Edge releases main's head by itself, only once main's own hourly run tested that commit, and only when the Close closure changed."""
-    RUN = {"head_sha": C, "head_branch": "main", "path": ".github/workflows/hourly.yml", "status": "completed", "id": 1, "run_attempt": 1}
+    RUN = {"head_sha": C, "head_branch": "main", "path": ".github/jim-workflows/hourly.yml", "status": "completed", "id": 1, "run_attempt": 1}
 
     def fetch(self, sha=C, runs=(RUN,), steps=None):
         steps = steps or {1: "success"}
@@ -137,7 +137,7 @@ class AutoRelease(unittest.TestCase):
         R = self.RUN
         self.assertEqual(rel.latest(self.fetch()), C)
         refused = [dict(runs=()), dict(steps={1: "failure"}), dict(steps={1: "skipped"}), dict(runs=({**R, "status": "in_progress"},)),
-                   dict(runs=({**R, "head_branch": "feature"},)), dict(runs=({**R, "head_sha": "b" * 40},)), dict(runs=({**R, "path": ".github/workflows/other.yml"},)),
+                   dict(runs=({**R, "head_branch": "feature"},)), dict(runs=({**R, "head_sha": "b" * 40},)), dict(runs=({**R, "path": ".github/jim-workflows/other.yml"},)),
                    dict(runs=(R, {**R, "id": 2}), steps={1: "success", 2: "failure"}), dict(runs=(R, {**R, "id": 2, "status": "queued"}))]
         for kw in refused:
             with self.assertRaises(rel.Refused, msg=str(kw)):

@@ -4,6 +4,9 @@ from datetime import datetime
 from unittest import mock
 
 from lifeos.jobs import enrich
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (14 days, US remote-only, UK lanes); Matt's policy: test_matt_lanes
 
 
 class Page:

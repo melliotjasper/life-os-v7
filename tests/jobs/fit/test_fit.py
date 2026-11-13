@@ -5,6 +5,9 @@ import unittest
 from lifeos.jobs.fit import GO_THRESHOLD, exclusions, extract
 from lifeos.jobs.fit.profile import Profile, ProfileError, load
 from lifeos.jobs.fit.score import evaluate
+from tests.kit import jim_lanes
+
+setUpModule, tearDownModule = jim_lanes.install, jim_lanes.uninstall          # Jim's lane mechanisms (UK lanes, keep list); Matt's policy: test_matt_lanes
 
 PROFILE = Profile({
     "years": 15, "scope": {"team_size": 10, "budget_usd": 20_000_000, "global": "direct", "enterprise": "direct",
@@ -45,20 +48,20 @@ Preferred
 
 class Exclusions(unittest.TestCase):
     def test_title_hit_is_hard(self):
-        hard, _ = exclusions.check("Clinical Program Manager", "Acme", GOOD)
-        self.assertEqual(hard["id"], "clinical")
+        hard, _ = exclusions.check("Registered Nurse Program Manager", "Acme", GOOD)
+        self.assertEqual(hard["id"], "medical_role")
 
     def test_one_deep_mention_is_soft_two_are_hard(self):
         filler = "Some neutral sentence about the work. " * 40
-        one, soft = exclusions.check("Program Manager", "Acme", filler + "Clients include healthcare firms.")
+        one, soft = exclusions.check("Program Manager", "Acme", filler + "Clients include the federal government.")
         self.assertIsNone(one)
-        self.assertEqual(soft, ["healthcare"])
-        two, _ = exclusions.check("Program Manager", "Acme", filler + "Clinical trial sites. More clinical trial work.")      # the default is two mentions
-        self.assertEqual(two["id"], "clinical")
+        self.assertEqual(soft, ["federal"])
+        two, _ = exclusions.check("Program Manager", "Acme", filler + "Federal government sites. More federal government work.")      # the default is two mentions
+        self.assertEqual(two["id"], "federal")
 
     def test_early_mention_is_hard_and_clearance_is_always_hard(self):
-        hard, _ = exclusions.check("Program Manager", "Acme", "We build clinical software. " + "x " * 500)
-        self.assertEqual(hard["id"], "clinical")
+        hard, _ = exclusions.check("Program Manager", "Acme", "We build software for the Department of Defense. " + "x " * 500)
+        self.assertEqual(hard["id"], "federal")
         hard, _ = exclusions.check("Program Manager", "Acme", "y " * 900 + "Active TS/SCI clearance required.")
         self.assertEqual(hard["id"], "clearance")
 
@@ -202,7 +205,7 @@ class Stage(unittest.TestCase):
         for score, want in ((40, "REVIEW"), (90, "ADMIT")):                         # a poor score from thin text stays Review, never excluded; a good one is admitted
             kept = stage.score_rows([row("web:su-example-ltd")], PROFILE, TODAY, fit={7: score})[0]
             self.assertEqual(kept[3].status, want, score)
-        self.assertEqual(stage.score_rows([row("web:su-example-ltd")], PROFILE, TODAY, fit={7: 40})[0][3].reason, "Fit 40 below 72 (on Jim's keep list)")
+        self.assertEqual(stage.score_rows([row("web:su-example-ltd")], PROFILE, TODAY, fit={7: 40})[0][3].reason, "Fit 40 below 72 (on the keep list)")
         other = stage.score_rows([row("web:greenhouse-example")], PROFILE, TODAY, fit={7: 40})[0]
         self.assertEqual(other[3].status, "EXCLUDE")                                 # the same poor score from any other source is excluded as before
 
@@ -520,21 +523,22 @@ class OnlyClause(unittest.TestCase):
         self.assertEqual(order, [3, 5, 2, 4, 1])                                   # non-board (unknown source too) oldest first, then boards oldest first
 
 
-class HealthcareNeedsRealWeight(unittest.TestCase):
-    """D111: Stream (a fintech for frontline workers, many of them in healthcare) was excluded as a healthcare job."""
+class HealthcareIsInScope(unittest.TestCase):
+    """Matt (MEJ-215): healthcare and digital-health product roles are in scope (Jim's blanket healthcare and clinical rules are gone); clinical
+    professions and hospital/clinic employers still exclude."""
     FINTECH = ("Stream is a fintech helping frontline workers in healthcare and retail access their pay. " + "We build payments and earned wage access products. " * 20 +
-               "Many of our customers are healthcare employers. Our healthcare partners include hospitals. ")
+               "Many of our customers are healthcare employers. Our healthcare partners include hospitals. Healthcare is our focus. Clinical teams use it. ")
 
-    def test_three_mentions_including_an_early_one_are_only_soft(self):
-        hard, soft = exclusions.check("Delivery Manager", "Stream Platforms Ltd", self.FINTECH)
-        self.assertIsNone(hard)
-        self.assertEqual(soft, ["healthcare"])
+    def test_healthcare_and_clinical_mentions_never_exclude(self):
+        self.assertEqual(exclusions.check("Delivery Manager", "Stream Platforms Ltd", self.FINTECH), (None, []))
+        self.assertIsNone(exclusions.check("Healthcare Product Manager", "Acme Healthcare", self.FINTECH)[0])
+        self.assertIsNone(exclusions.check("Head of Product", "Teladoc Health", "We build virtual care and clinical software. " * 5)[0])
+        self.assertIsNone(exclusions.check("Product Manager, Patient Experience", "Teladoc Health", self.FINTECH)[0])
 
-    def test_a_healthcare_title_or_company_or_four_mentions_is_still_hard(self):
-        self.assertEqual(exclusions.check("Healthcare Program Manager", "Acme", self.FINTECH)[0]["id"], "healthcare")
-        self.assertEqual(exclusions.check("Program Manager", "Acme Healthcare", self.FINTECH)[0]["id"], "healthcare")
-        heavy = self.FINTECH + "Healthcare is our focus. Healthcare IT is the product."
-        self.assertEqual(exclusions.check("Program Manager", "Acme", heavy)[0]["id"], "healthcare")
+    def test_clinical_professions_and_hospital_employers_still_exclude(self):
+        self.assertEqual(exclusions.check("Registered Nurse", "Acme", self.FINTECH)[0]["id"], "medical_role")
+        self.assertEqual(exclusions.check("Patient Care Coordinator", "Acme", self.FINTECH)[0]["id"], "medical_role")
+        self.assertEqual(exclusions.check("Program Manager", "Seattle Children's Hospital", self.FINTECH)[0]["id"], "healthcare_employer")
 
 
 class KeptPromotion(unittest.TestCase):
@@ -693,4 +697,4 @@ class NoHistoricalRescore(unittest.TestCase):
         """D213: no version bump for that change (l15 is the later keep-list change, which does bump; l17 is the LIFE-212 age limits, which bump so jobs already on the board are re-judged against them), so stage.PICK finds no stored score stale for this change and no PUBLISHED job is re-scored by it (D94 unchanged)."""
         from lifeos.jobs import lanes
         from lifeos.jobs.fit import MODEL_VERSION
-        self.assertEqual((MODEL_VERSION, lanes.POLICY_VERSION), ("6", "l17"))
+        self.assertEqual((MODEL_VERSION, lanes.POLICY_VERSION), ("6", "m2"))

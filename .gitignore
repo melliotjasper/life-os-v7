@@ -6,3 +6,7 @@ secrets.env
 .venv/
 venv/
 .DS_Store
+
+# Matt (MEJ-215): the private fit profile and any local exports never enter git
+private/
+Connections.csv

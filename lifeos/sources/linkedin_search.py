@@ -32,7 +32,9 @@ from lifeos.sources.web import boards, suppress
 SOURCE = "linkedin-search"
 LANE = "US Remote"
 SEARCH = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
-QUERIES = ("technical program manager", "program manager", "delivery manager", "implementation manager")    # D204: role first; no "remote" in the query
+# Matt (MEJ-215): his target titles (product leadership; eCommerce, marketplace and partnerships product). D204: role first; no "remote" in the query.
+QUERIES = ("head of product", "director of product", "vp product", "principal product manager", "group product manager",
+           "senior product manager ecommerce", "product manager marketplace", "product manager partnerships")
 PAGE = 10                                                      # cards per guest search page
 
 CARD = re.compile(r'<li>(.*?)</li>', re.S)

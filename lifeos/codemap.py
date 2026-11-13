@@ -39,7 +39,7 @@ def stages():
 
 def workflows():
     out = {}
-    for path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+    for path in sorted((ROOT / ".github" / "jim-workflows").glob("*.yml")):
         text = path.read_text()
         jobs = re.findall(r"^  ([a-z][\w-]*):\s*$", text.split("\njobs:\n", 1)[-1], re.M)
         out[path.name] = {"secrets": sorted(set(re.findall(r"secrets\.([A-Z0-9_]+)", text))), "jobs": jobs, "manual": "workflow_dispatch" in text}

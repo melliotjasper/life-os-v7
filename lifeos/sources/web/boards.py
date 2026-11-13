@@ -23,7 +23,10 @@ STRONG = re.compile(r"\b(program(?:me)? (?:manag\w*|lead|director|head)|(?:techn
                     r"tpm|project (?:manag\w*|lead|director)|delivery (?:manag\w*|lead|director|head)|head of (?:delivery|programs?|programmes?|product|pmo|transformation)|"
                     r"implementation (?:manag\w*|lead|director|consultant)|product (?:manag\w*|lead|owner|director|head)|(?:director|vp|vice president|head) of product(?! marketing| design)|"
                     r"chief of staff|transformation (?:lead|manag\w*|director|head|program)|pmo|engagement manager|solutions? (?:architect|consultant)|portfolio (?:manag\w*|lead|director)|"
-                    r"release manag\w*)\b", re.I)
+                    r"release manag\w*|"
+                    # Matt (MEJ-215): product leadership by any spelling, and the eCommerce / marketplace / partnerships product-adjacent leads in his profile
+                    r"chief product officer|cpo|(?:svp|vp|vice president|director|head)\W+(?:of\s+)?product(?! marketing| design)(?!\w)|"
+                    r"(?:head|director|vp|vice president|svp)\W+(?:of\s+)?(?:e-?commerce|digital(?: product| commerce)?|marketplaces?|partnerships?|retail media|monetization))\b", re.I)
 # Adjacent: operations, strategy and transformation leadership, plausible only when no other profession or junior support word is in the title.
 # Product Marketing is NOT passed (Fit audit, Oct 17: Admitted Product Marketing scored up to 100 with "Gaps: none" on generic words such as
 # Cloud/SaaS; Fit cannot tell it from the target family yet, so passing it would admit it).
@@ -97,6 +100,8 @@ def screen(job):
     tail = "_place_unresolved" if place == "unresolved" else ""
     mode = lanes.detect_work_mode(where, title, text)
     if mode in ("onsite", "hybrid"):
+        if lanes.POLICIES[LANE].work_mode == "remote_or_metro" and lanes._in_metro(where):
+            return "kept_metro_" + mode                       # Matt: hybrid (or onsite, then Review) in the Seattle area is in his lane
         return "not_remote_" + mode                           # D204: only an employer requirement excludes
     why = suppress.reason(job, None, LANE, first_party=True)
     if why:

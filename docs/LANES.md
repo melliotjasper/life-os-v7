@@ -36,7 +36,7 @@ Unapplied jobs are retired 30 days after the employer Posting Date (else First S
 NOT_PROTECTED: the page is trashed (recoverable for 30 days in Notion), marked PURGED in Hostinger, and a **90-day tombstone** (dedupe key and fuzzy key only)
 stops the same vacancy being recreated. A vacancy with a later posting date than the retirement may re-enter. The legacy Lifecycle field is never read
 for a decision or written. **Applied jobs are never destructively retired by Jobs**: `progression.resolve` returns UNKNOWN for them (and PROTECTED when a
-Saturn Decision exists) until the Interview progression handoff (INT-7.1A) supplies evidence; a job that reaches an interview stage is therefore always kept.
+My Decision exists) until the Interview progression handoff (INT-7.1A) supplies evidence; a job that reaches an interview stage is therefore always kept.
 Only our own pages are touched (matched by stored page id). Hostinger: descriptions 90 days, never-published job rows 365 days, tombstones 90 days.
 
 **First-party boards (D167, Jim Oct 11):** a role read off its employer's own board (source `web:<board>`, not the Open Jobs feed or an aggregator) is open while the board lists it (D111), so the posting-age rule does not retire it. It is retired only when a complete listing of that board no longer has it (the web pass marks it REMOVED) and it is 30+ days old; a role with no board record is kept, because nothing proves it closed. Feed, aggregator and newsletter roles keep the 30-day rule.
