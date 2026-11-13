@@ -120,6 +120,7 @@ class Facts:
     title_only: bool = False             # D123: found by a title search; the page text could not be read, so the Fit rests on the title alone
     first_party: bool = False            # D111: listed on the employer's own board, so it is open: its posting age is not judged
     metro: bool = False                  # the job's place is inside the lane's commutable area (remote_or_metro)
+    named_place: bool = False            # the job's place names a US city or state (not just "United States" or "Remote")
     open_application: bool = False       # D213: an unsolicited / general application ("Initiativbewerbung", "Talent Pool"): not a vacancy
 
 
@@ -163,6 +164,8 @@ def _qualify(policy, facts, today):
             return Decision(EXCLUDE, f"not remote: {facts.work_mode} required outside the Seattle area" + (f' ("{facts.work_evidence[:40]}")' if facts.work_evidence else ""))
         if facts.work_mode == "onsite":
             return Decision(REVIEW, "onsite in the Seattle area")              # Matt: hybrid 2-3 days is the target; a fully onsite Seattle role is his call
+    # Matt (MEJ-215): a job placed in a named city outside the Seattle area that never says remote is often an office job; Review, never Admit on a presumption
+    remote_unstated = policy.work_mode == "remote_or_metro" and facts.work_mode == "unknown" and facts.named_place and not facts.metro
     if (policy.pay_floor and facts.pay_min is not None and facts.pay_currency == policy.currency
             and facts.pay_min < policy.pay_floor):
         return Decision(EXCLUDE, f"explicit pay below {policy.currency}{policy.pay_floor:,}")
@@ -191,6 +194,8 @@ def _qualify(policy, facts, today):
             return Decision(REVIEW, "geography unresolved")
     if facts.fit is None:
         return Decision(REVIEW, "Fit unscorable")
+    if remote_unstated:
+        return Decision(REVIEW, "outside the Seattle area; remote not stated")
     if facts.fit < FIT_FLOOR and not (facts.thin_admit and facts.fit >= REVIEW_FLOOR):          # Jim, Oct 25: a thin board-feed role is judged on its title (Fit 60+), not held to 72 on a few lines of text
         return Decision(REVIEW, f"Fit {facts.fit} below {FIT_FLOOR}" + (" (on the keep list)" if facts.kept else ""))
     if policy.work_mode == "remote_or_metro" and facts.work_mode == "hybrid":
@@ -299,7 +304,7 @@ def detect_work_mode(location, title="", text="", window=1500):
 
 LANE_ALIAS = {"Newsletter": "US Remote"}        # a newsletter is a source family; its jobs are judged by the US Remote policy
 ADMISSION_LABEL = {ADMIT: "Admitted", REVIEW: "Passed / Review", EXCLUDE: "Excluded"}   # the Ledger's Admission Status options
-POLICY_VERSION = "m2"                            # bump when a policy changes so stored decisions are re-evaluated (l17: LIFE-212 employer-board age limits, US Remote 14 days and Scale-Up 30; l16: a thin Scale-Up, Greenhouse, Lever or Ashby board role with a fitting title is admitted; l15: the Revolut keep-list additions and the Credit Manager (Product) exemption)
+POLICY_VERSION = "m3"                            # bump when a policy changes so stored decisions are re-evaluated (l17: LIFE-212 employer-board age limits, US Remote 14 days and Scale-Up 30; l16: a thin Scale-Up, Greenhouse, Lever or Ashby board role with a fitting title is admitted; l15: the Revolut keep-list additions and the Credit Manager (Product) exemption)
 
 
 def lane_for(row_lane):
@@ -416,7 +421,8 @@ def facts_for(fit, title, location, text, salary_text, posted, first_seen, marke
         market = "US"
     return Facts(fit=fit, market=market, work_mode=mode, work_evidence=evidence, pay_min=pay_min,
                  pay_currency=currency, posted=when, route=route_dict(route), geography=geography_status(location), located=bool((location or "").strip()), first_party=first_party, kept=kept, title_only=title_only, thin=thin, thin_admit=thin and thin_admit,
-                 open_application=open_application(title), metro=_in_metro(location))
+                 open_application=open_application(title), metro=_in_metro(location),
+                 named_place=bool(US_PLACES.search(location or "") or _CITY_STATE.search(location or "")))
 
 
 def _in_metro(location):
@@ -461,6 +467,7 @@ PUBLIC_REASONS = (                                       # (lane reason, the fix
     (r"not remote: hybrid required outside the Seattle area(?: \(.*\))?", "not_remote_hybrid_outside_metro"),
     (r"not remote: onsite required outside the Seattle area(?: \(.*\))?", "not_remote_onsite_outside_metro"),
     (r"onsite in the Seattle area", "onsite_in_metro"), (r"Seattle-area hybrid", "metro_hybrid"),
+    (r"outside the Seattle area; remote not stated", "remote_not_stated_outside_metro"),
     (r"remote assumed", "remote_assumed"), (r"Fit unscorable", "fit_unscorable"), (r"vacancy closed", "vacancy_closed"), (r"not a vacancy: open application", "not_a_vacancy"),
     (r"explicit pay below .+", "pay_below_floor"), (r"posting date unresolved", "posting_date_unresolved"),
     (r"posting date in the future", "posting_date_future"), (rf"older than {_N} days", "older_than_max_age"),

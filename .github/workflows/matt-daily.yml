@@ -85,29 +85,49 @@ jobs:
         run: |
           flag=$([ "$LIVE" = "true" ] && echo --live)
           failed=""
-          step() { echo "::group::$*"; if timeout 1500 "$@"; then echo "::endgroup::"; else echo "::endgroup::"; echo "::warning::step failed: $*"; failed="$failed|$*"; fi; }
+          step() { echo "::group::$*"; if timeout 1500 "$@" 2>&1 | tee /tmp/step.log; then echo "::endgroup::"; else echo "::endgroup::"; echo "::warning::step failed: $*"; failed="$failed|$*"; fi; }
+          set -o pipefail
+          NOTION_OK=false; NETWORK_OK=false
+          if [ "$HAS_NOTION" = "true" ]; then
+            if python -m lifeos.jobs.notion_preflight | tee -a "$GITHUB_STEP_SUMMARY"; then NOTION_OK=true; else failed="$failed|notion-preflight (connect LIFE OS Jobs in Notion)"; fi
+            NETWORK_OK=$(grep -o 'NETWORK_OK=.*' "$GITHUB_ENV" | tail -1 | cut -d= -f2)
+          fi
           if [ "$HAS_GMAIL" = "true" ]; then
             step python -m lifeos.sources.newsletters.sweep $flag
             step python -m lifeos.sources.newsletters.ingest $flag
-            step python -m lifeos.run resolve-linkedin --limit 150 $flag
           fi
           step python -m lifeos.run linkedin-search --limit 40 $flag
+          step python -m lifeos.run resolve-linkedin --limit 150 $flag          # reads the LinkedIn search's jobs (and, with Gmail, the alert emails' jobs)
           step python -m lifeos.run boards --limit 900 $flag
-          for pass in 1 2 3; do step python -m lifeos.run boards-backfill --limit 450 $flag; done
+          # first-pass reads of never-read boards: 450 a pass, until none remain (about 24 passes the first day, then a few new boards a day)
+          for pass in $(seq 1 30); do
+            step python -m lifeos.run boards-backfill --limit 450 $flag
+            grep -q '"remaining": 0' /tmp/step.log && break
+            grep -q '"due": 0' /tmp/step.log && break
+            grep -q '"backfill": "off"' /tmp/step.log && break
+          done
           step python -m lifeos.run enrich --limit 600 $flag
-          step python -m lifeos.run fit $flag
-          if [ "$HAS_NOTION" = "true" ]; then
+          step python -m lifeos.run fit --limit 6000 $flag          # every job read today (the first full board pass reads ~2,300; Fit is ~10 jobs a second)
+          if [ "$NOTION_OK" = "true" ]; then
             step python -m lifeos.run audit-ready $flag
-            step python -m lifeos.run publish --limit 150 $flag
+            step python -m lifeos.run publish --limit 100 $flag             # about 13 s a page with its read-back; the rest publish on the next runs
             step python -m lifeos.run audit $flag
-          else
+          elif [ "$HAS_NOTION" != "true" ]; then
             echo "::notice::NOTION_API_TOKEN / NOTION_JOB_LEDGER_DATA_SOURCE_ID not set: nothing is published"
           fi
           step python -m lifeos.run expire-holds $flag
-          if [ "$HAS_NETWORK" = "true" ]; then
-            step python -m lifeos.run network-import $flag
-            step python -m lifeos.run network-match
-            [ "$HAS_NOTION" = "true" ] && step python -m lifeos.run network-surface --limit 60 $flag
+          if [ "$HAS_NETWORK" = "true" ] && [ "$NETWORK_OK" = "true" ]; then
+            echo "::group::network-import"
+            if timeout 600 python -m lifeos.run network-import $flag 2>&1 | tee /tmp/step.log; then imported=true; else imported=false; fi
+            echo "::endgroup::"
+            if grep -q NETWORK_NO_FILE /tmp/step.log; then
+              echo "::notice::No Connections.csv on the LinkedIn Connections page yet: referral matching starts once it is attached (docs/MATT_SETUP.md step 8)"
+            elif [ "$imported" = "true" ]; then
+              step python -m lifeos.run network-match
+              [ "$NOTION_OK" = "true" ] && step python -m lifeos.run network-surface --limit 60 $flag
+            else
+              failed="$failed|network-import"
+            fi
           fi
           if [ "$HAS_GMAIL" = "true" ]; then step python -m lifeos.sources.newsletters.finalize $flag; fi
           python -m lifeos.jobs.store | tee -a "$GITHUB_STEP_SUMMARY"
@@ -122,14 +142,15 @@ jobs:
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STATE_KEY -in /tmp/store.sql.gz.enc | gunzip -t     # read back before replacing the last good snapshot
           size=$(stat -c %s /tmp/store.sql.gz.enc)
           if [ "$size" -gt 95000000 ]; then echo "::error::store snapshot is ${size} bytes, over GitHub's file limit"; exit 1; fi
+          # a separate worktree, so the checked-out code (and the post-job steps that need it) stays in place
+          git worktree add -q --orphan -b state-new /tmp/state-tree
+          cd /tmp/state-tree
           git config user.name "matt-daily"
           git config user.email "$GITHUB_ACTOR_ID+$GITHUB_ACTOR@users.noreply.github.com"
-          git checkout --orphan state-new
-          git rm -rq --cached . && git clean -fdq
           cp /tmp/store.sql.gz.enc store.sql.gz.enc
           git add store.sql.gz.enc
           git commit -qm "store snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -f origin state-new:state
+          git push -qf origin state-new:state
           echo "saved $(du -h store.sql.gz.enc | cut -f1) encrypted snapshot" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Fail the run when a stage failed (after the store is saved)
         if: ${{ env.FAILED_STEPS != '' }}

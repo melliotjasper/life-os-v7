@@ -818,7 +818,7 @@ CODES.update({    # --- Jira/Notion context refactor planner (lifeos/delivery/co
 })
 
 NOT_CODES = frozenset((
-    "LIFEOS_STORE_DIRECT", "LIFEOS_ACQ_DB_USER", "LIFEOS_ACQ_DB_PASSWORD",            # upper-case names that are configuration, not results: environment variables, secret names and setting keys
+    "LIFEOS_STORE_DIRECT", "LIFEOS_ACQ_DB_USER", "LIFEOS_ACQ_DB_PASSWORD", "GITHUB_ENV", "NETWORK_OK",            # upper-case names that are configuration, not results: environment variables, secret names and setting keys
     "JM_DASHBOARD_PAGE_ID", "JM_DASHBOARD_REDACT_TERMS",      # JFM-221: the Jim & Matt dashboard page and Jim's private redaction terms
     "BUZZ_MCP_PUBLIC_URL", "BUZZ_MCP_ORIGINS", "BUZZ_OAUTH_ISSUER", "BUZZ_OAUTH_JWKS_URL", "BUZZ_OAUTH_CLIENTS", "BUZZ_OAUTH_USERS", "BUZZ_OAUTH_AS_URL", "BUZZ_RECIPIENTS", "BUZZ_MENTION_SENDERS",      # LIFE-216 / BUZZ-16: remote Buzz MCP settings
     "LAYOUT_SHARD",                # Jim, Oct 27: which slice (i/n) of the Ledger pages a layout run moves
@@ -932,6 +932,7 @@ REASONS = {
     "not_remote_onsite_outside_metro": _r("lanes", "terminal", False, "Onsite is required outside the Seattle area.", "None."),
     "onsite_in_metro": _r("lanes", "state", False, "A fully onsite role in the Seattle area: Review.", "None."),
     "metro_hybrid": _r("lanes", "state", False, "A hybrid role in the Seattle area.", "None."),
+    "remote_not_stated_outside_metro": _r("lanes", "state", False, "Placed in a city outside the Seattle area and remote is not stated: Review.", "None."),
     "older_than_max_age": _r("lanes", "terminal", False, "The posting is older than the maximum age.", "None."),
     "posting_date_future": _r("lanes", "state", False, "The posting date is in the future.", "None."),
     "posting_date_unresolved": _r("lanes", "state", False, "The posting date is unresolved.", "None."),
